@@ -2,16 +2,19 @@ import requests
 from bs4 import BeautifulSoup
 import numpy as np
 import pandas as pd
+from Adafruit_IO import Client, RequestError, Feed
+from secrets import secrets
+import time
 
 # global flags
 print_inline = False
 print_table = True
 
-# Johns Hopkins
+# Johns Hopkins api -----------------------------------------------------------
 if print_inline:
     print("\nJohns Hopkins:")
 else:
-    print("\npulling from Johns Hopkins...")
+    print("\npulling from Johns Hopkins api...")
 # get latest date
 api_response = requests.get('https://covid-19.datasettes.com/covid.json?sql=select+max(day)+from+johns_hopkins_csse_daily_reports+where+country_or_region=%27US%27')
 latest_date = api_response.json()['rows'][0][0]
@@ -27,33 +30,96 @@ if print_inline:
     print("World deaths:", world_deaths)
 johnshopkins = pd.Series([world_deaths, us_deaths], index=['world', 'US'], name='Johns Hopkins api')
 
-# # Johns Hopkins unofficial API
-# if print_inline:
-#     print("\nJohns Hopkins:")
-# else:
-#     print("\npulling from Johns Hopkins...")
-# api_response = requests.get('https://covid19api.herokuapp.com/deaths')
-# world_deaths = int(float(api_response.json()['latest']))
-# if print_inline:
-#     print("World deaths:", world_deaths)
-# # look up the index for United States in the JSON list (it should be 247?)
-# r = api_response.json()
-# dict_of_country_codes = {}
-# for i in np.arange(len(r['locations'])):
-#     code = r['locations'][i]['country_code']
-#     dict_of_country_codes[code] = i
-#     # print (code, i)
-# us_deaths = int(float(r['locations'][dict_of_country_codes['US']]['latest']))
-# if print_inline:
-#     print("US deaths:", us_deaths)
-# johnshopkins = pd.Series([world_deaths, us_deaths], index=['world', 'US'], name='Johns Hopkins')
+def jhu_data_url(year, month, day, region='US'):
+    date = '{:02}'.format(month) + '-' + '{:02}'.format(day) + '-' + '{:04}'.format(year)
+    if region == 'US':
+        JHU_URL = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/' + date + '.csv'
+    elif region == 'world':
+        JHU_URL = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/' + date + '.csv'
+    else:
+        JHU_URL = None
+        raise Exception("got unexpected region for jhu_data_url()")
+    return JHU_URL
 
-# Johns Hopkins API (alternate)
-# docs: https://documenter.getpostman.com/view/10808728/SzS8rjbc
-# main page: https://covid19api.com/
+# Johns Hopkins github; pandas
+if print_inline:
+    print("\nJohns Hopkins github-pandas:")
+else:
+    print("pulling from Johns Hopkins github with pandas...")
+# get US deaths
+y = time.localtime()[0]
+m = time.localtime()[1]
+d = time.localtime()[2] + 1
+jhu_csvfile_exists = False
+while not jhu_csvfile_exists:
+    JHU_DATA_SOURCE = jhu_data_url(y,m,d,region='US')
+    test_date = '{:04}'.format(y) + '-' + '{:02}'.format(m) + '-' + '{:02}'.format(d)
+    if print_inline:
+        print("  ...fetching text for", test_date)
+    r = requests.get(jhu_data_url(y,m,d))
+    if r.status_code == 200:
+        if print_inline:
+            print("     found data for this date!")
+        jhu_csvfile_exists = True
+    else:
+        if print_inline:
+            print("     data doesn't exist for this date; trying again...")
+        if int(d) > 1:
+            d -= 1
+        elif int(m) > 1:
+            m -= 1
+            d = 31
+        else:
+            y -= 1
+            m = 12
+            d = 31
+r.close()
+latest_date = '{:04}'.format(y) + '-' + '{:02}'.format(m) + '-' + '{:02}'.format(d)
+if print_inline:
+    print(' ',latest_date)
+df = pd.read_csv(JHU_DATA_SOURCE)
+us_deaths = sum(df['Deaths'])
+if print_inline:
+    print("US deaths:", us_deaths)
+# get world deaths
+y = time.localtime()[0]
+m = time.localtime()[1]
+d = time.localtime()[2] + 1
+jhu_csvfile_exists = False
+while not jhu_csvfile_exists:
+    JHU_DATA_SOURCE = jhu_data_url(y,m,d,region='world')
+    test_date = '{:04}'.format(y) + '-' + '{:02}'.format(m) + '-' + '{:02}'.format(d)
+    if print_inline:
+        print("  ...fetching text for", test_date)
+    r = requests.get(jhu_data_url(y,m,d))
+    if r.status_code == 200:
+        if print_inline:
+            print("     found data for this date!")
+        jhu_csvfile_exists = True
+    else:
+        if print_inline:
+            print("     data doesn't exist for this date; trying again...")
+        if int(d) > 1:
+            d -= 1
+        elif int(m) > 1:
+            m -= 1
+            d = 31
+        else:
+            y -= 1
+            m = 12
+            d = 31
+r.close()
+latest_date = '{:04}'.format(y) + '-' + '{:02}'.format(m) + '-' + '{:02}'.format(d)
+if print_inline:
+    print(' ',latest_date)
+df = pd.read_csv(JHU_DATA_SOURCE)
+world_deaths = sum(df['Deaths'])
+if print_inline:
+    print("World deaths:", world_deaths)
+johnshopkins_github_pandas = pd.Series([world_deaths, us_deaths], index=['world', 'US'], name='Johns Hopkins github')
 
 
-# COVID Tracking Project
+# COVID Tracking Project ------------------------------------------------------
 if print_inline:
     print("\nCOVID Tracking Project:")
 else:
@@ -68,7 +134,7 @@ if print_inline:
     print("CA deaths:", ca_deaths)
 covidtrackingproject = pd.Series([us_deaths, ca_deaths], index=['US', 'CA'], name='COVID Tracking Project')
 
-# CDC
+# CDC -------------------------------------------------------------------------
 if print_inline:
     print("\nCDC:")
 else:
@@ -92,7 +158,7 @@ if print_inline:
     print("CA deaths:", ca_deaths)
 cdc = pd.Series([us_deaths, ca_deaths], index=['US', 'CA'], name='CDC')
 
-# WHO
+# WHO -------------------------------------------------------------------------
 if print_inline:
     print("\nWHO:")
 else:
@@ -110,11 +176,11 @@ if print_inline:
     print("World deaths:", world_deaths)
 who = pd.Series([world_deaths], index=['world'], name='WHO')
 
-# LA Times
+# LA Times api ----------------------------------------------------------------
 if print_inline:
     print("\nLA Times:")
 else:
-    print("pulling from the LA Times...")
+    print("pulling from the LA Times api...")
 api_response = requests.get('https://covid-19.datasettes.com/covid/latimes_county_totals.json?county=Los+Angeles')
 la_deaths = int(float(api_response.json()['rows'][0][5]))
 if print_inline:
@@ -133,77 +199,15 @@ else:
 URL = 'https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/latimes-county-totals.csv'
 df = pd.read_csv(URL)
 latest_date = df['date'][0] # date is formatted YYYY-MM-DD
-print(' ',latest_date)
+# print(' ',latest_date)
 la_deaths = int(df[(df['county'] == 'Los Angeles') & (df['date'] == latest_date)]['deaths'])
 if print_inline:
     print("LA County deaths:", la_deaths)
-latimes_github_pandas = pd.Series([la_deaths], index=['LA county'], name='LA Times github-pandas')
+ca_deaths = sum(df[df['date'] == latest_date]['deaths'])
+latimes_github_pandas = pd.Series([la_deaths, ca_deaths], index=['LA county', 'CA'], name='LA Times github')
 
-# LA Times github; requests
-if print_inline:
-    print("\nLA Times github-requests")
-else:
-    print("pulling from the LA Times github with requests...")
-api_response = requests.get('https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/latimes-county-totals.csv')
-t = api_response.text
-latest_date_rt = t.split('\n')[1].split(',')[0]
-county_row = 19
-county = t.split('\n')[county_row].split(',')[1]
-if print_inline:
-    print(' ',latest_date_rt)
-    print(' ',county)
-if county == 'Los Angeles':
-    la_deaths = int(t.split('\n')[county_row].split(',')[4])
-else:
-    error_msg = "expecting data for Los Angeles, but instead got data for " + county
-    raise Exception(error_msg)
-if print_inline:
-    print("LA County deaths:", la_deaths)
-latimes_github_requests = pd.Series([la_deaths], index=['LA county'], name='LA Times github-requests')
 
-# Johns Hopkins github; pandas
-if print_inline:
-    print("\nJohns Hopkins github-pandas:")
-else:
-    print("pulling from Johns Hopkins github with pandas...")
-year = latest_date[:4]
-month = latest_date[5:7]
-day = latest_date[8:]
-latest_date_JHU = month + '-' + day + '-' + year
-if print_inline:
-    print(' ',latest_date_JHU)
-URL = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/' + latest_date_JHU + '.csv'
-df = pd.read_csv(URL)
-us_deaths = sum(df['Deaths'])
-if print_inline:
-    print("US deaths:", us_deaths)
-johnshopkins_github_pandas = pd.Series([us_deaths], index=['US'], name='Johns Hopkins github-pandas')
-
-# Johns Hopkins github; requests
-if print_inline:
-    print("\nJohns Hopkins github-requests:")
-else:
-    print("pulling from Johns Hopkins github with requests...")
-year = latest_date[:4]
-month = latest_date[5:7]
-day = latest_date[8:]
-latest_date_JHU = month + '-' + day + '-' + year
-if print_inline:
-    print(' ',latest_date_JHU)
-api_response = requests.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/' + latest_date_JHU + '.csv')
-t = api_response.text
-# state death totals are in column 6
-# ignore the column headers in row 0
-# ignore the blank line in the last row (row -1)
-us_deaths = 0
-for state in t.split('\n')[1:-1]:
-    state_deaths = int(state.split(',')[6])
-    us_deaths += state_deaths
-if print_inline:
-    print("US deaths:", us_deaths)
-johnshopkins_github_requests = pd.Series([us_deaths], index=['US'], name='Johns Hopkins github-requests')
-
-# CA Dept of Public Health
+# CA Dept of Public Health ----------------------------------------------------
 if print_inline:
     print("\nCA State:")
 else:
@@ -225,16 +229,14 @@ if print_inline:
 
 # save all the data into a table, then transpose it to display sources as rows and death regions as columns
 df = pd.concat([
-    johnshopkins, 
-    johnshopkins_github_pandas, 
-    johnshopkins_github_requests,
-    who, 
-    cdc, 
-    california, 
-    covidtrackingproject, 
-    latimes, 
+    johnshopkins_github_pandas,
+    cdc,
     latimes_github_pandas,
-    latimes_github_requests,
+    california,
+    who,
+    covidtrackingproject,
+    johnshopkins,
+    latimes
     ], axis=1).T
 df = df.rename(columns={
     "world": "world", 
@@ -251,19 +253,88 @@ if print_table:
 
 # check for errors in US data ... if JHU data is > 10% off from CDC data, display CDC instead
 try:
-    if df['United States'].loc['Johns Hopkins github-requests'] > 1.1*(df['United States'].loc['CDC']):
+    if df['United States'].loc['Johns Hopkins github'] > 1.1*(df['United States'].loc['CDC']):
         print('{:7,.0f}'.format(df['United States'].loc['CDC']),  "dead in United States (CDC)")
     else:
-        print('{:7,.0f}'.format(df['United States'].loc['Johns Hopkins github-requests']),  "dead in United States (JHU)")
+        print('{:7,.0f}'.format(df['United States'].loc['Johns Hopkins github']),  "dead in United States (JHU)")
 except:
     print('{:7,.0f}'.format(df['United States'].loc['CDC']),  "dead in United States (CDC)")
 
 # check for errors in LA county data ... if LA Times data is > 10% off from CDPH data, display CDPH instead
 try:
-    if df['LA county'].loc['LA Times github-requests'] > 1.1*(df['LA county'].loc['CDPH']):
+    if df['LA county'].loc['LA Times github'] > 1.1*(df['LA county'].loc['CDPH']):
         print('{:7,.0f}'.format(df['LA county'].loc['CDPH']),     "dead in LA county     (CDPH)")
     else:
-        print('{:7,.0f}'.format(df['LA county'].loc['LA Times github-requests']),     "dead in LA county     (LAT)")
+        print('{:7,.0f}'.format(df['LA county'].loc['LA Times github']),     "dead in LA county     (LAT)")
 except:
     print('{:7,.0f}'.format(df['LA county'].loc['CDPH']),     "dead in LA county     (CDPH)")
 print("")
+
+# connect to Adafruit IO dashboard --------------------------------------------
+# Set your Adafruit IO Username and Key in secrets.py
+# (visit io.adafruit.com if you need to create an account,
+# or if you need your Adafruit IO key.)
+
+aio_username = secrets["aio_username"]
+aio_key = secrets["aio_key"]
+
+# Initialize an Adafruit IO HTTP API object
+io = Client(aio_username, aio_key)
+
+print("\nconnecting to Adafruit IO, setting up feeds...")
+try:
+    # Get the 'la-deaths-cdph' feed from Adafruit IO
+    la_cdph_feed = io.feeds("la-deaths-cdph")
+    print("  got feed 1 of 4...")
+except RequestError:
+    # If no 'la-deaths-cdph' feed exists, create one
+    la_cdph_feed = io.create_feed(Feed(name="la-deaths-cdph"))
+
+try:
+    # Get the 'la-deaths-lat' feed from Adafruit IO
+    la_lat_feed = io.feeds("la-deaths-lat")
+    print("  got feed 2 of 4...")
+except RequestError:
+    # If no 'la-deaths-lat' feed exists, create one
+    la_lat_feed = io.create_feed(Feed(name="la-deaths-lat"))
+
+try:
+    # Get the 'us-deaths-cdc' feed from Adafruit IO
+    us_cdc_feed = io.feeds("us-deaths-cdc")
+    print("  got feed 3 of 4...")
+except RequestError:
+    # If no 'us-deaths-cdc' feed exists, create one
+    us_cdc_feed = io.create_feed(Feed(name="us-deaths-cdc"))
+
+try:
+    # Get the 'us-deaths-jhu' feed from Adafruit IO
+    us_jhu_feed = io.feeds("us-deaths-jhu")
+    print("  got feed 4 of 4...")
+except RequestError:
+    # If no 'us-deaths-jhu' feed exists, create one
+    us_jhu_feed = io.create_feed(Feed(name="us-deaths-jhu"))
+
+def send_data(us_cdc, us_jhu, la_cdph, la_lat):
+    """send US and LA death data to Adafruit IO dashboard"""
+    print("sending {0} to us-deaths-cdc feed...".format(us_cdc))
+    io.send_data(us_cdc_feed.key, us_cdc)
+    print("  data sent!")
+
+    print("sending {0} to us-deaths-jhu feed...".format(us_jhu))
+    io.send_data(us_jhu_feed.key, us_jhu)
+    print("  data sent!")
+
+    print("sending {0} to la-deaths-cdph feed...".format(la_cdph))
+    io.send_data(la_cdph_feed.key, la_cdph)
+    print("  data sent!")
+
+    print("sending {0} to la-deaths-lat feed...".format(la_lat))
+    io.send_data(la_lat_feed.key, la_lat)
+    print("  data sent!")
+
+send_data(
+    us_cdc=int(df['United States'].loc['CDC']),
+    us_jhu=int(df['United States'].loc['Johns Hopkins github']),
+    la_cdph=int(df['LA county'].loc['CDPH']),
+    la_lat=int(df['LA county'].loc['LA Times github'])
+    )
