@@ -1,5 +1,4 @@
-.github/workflows/scheduled.yml
 laptop/__pycache__
-laptop/secrets.py
-laptop/requirements.txt
+__pycache__
+secrets.py
 matrixportal/secrets.py

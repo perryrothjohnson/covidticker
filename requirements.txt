@@ -1,0 +1,5 @@
+requests
+BeautifulSoup
+numpy
+pandas
+Adafruit_IO

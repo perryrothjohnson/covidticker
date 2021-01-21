@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import numpy as np
 import pandas as pd
 from Adafruit_IO import Client, RequestError, Feed
-from secrets import secrets
 import time
 
 # global flags
@@ -275,8 +274,16 @@ print("")
 # (visit io.adafruit.com if you need to create an account,
 # or if you need your Adafruit IO key.)
 
-aio_username = secrets["aio_username"]
-aio_key = secrets["aio_key"]
+try:
+    # Get Adafruit IO usernamek and key from a secrets.py file
+    from secrets import secrets
+    aio_username = secrets["aio_username"]
+    aio_key = secrets["aio_key"]
+except ImportError:
+    # otherwise, get it from environment variables (github secrets)
+    import os
+    aio_username = os.getenv('AIO_USERNAME')
+    aio_key = os.environ.get('AIO_KEY')
 
 # Initialize an Adafruit IO HTTP API object
 io = Client(aio_username, aio_key)
