@@ -1,5 +1,5 @@
 requests
-BeautifulSoup
+beautifulsoup4
 numpy
 pandas
 Adafruit_IO
