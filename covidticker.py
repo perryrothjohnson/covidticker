@@ -282,7 +282,7 @@ try:
 except ImportError:
     # otherwise, get it from environment variables (github secrets)
     import os
-    aio_username = os.getenv('AIO_USERNAME')
+    aio_username = os.environ.get('AIO_USERNAME')
     aio_key = os.environ.get('AIO_KEY')
 
 # Initialize an Adafruit IO HTTP API object
