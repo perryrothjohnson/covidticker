@@ -1,4 +1,2 @@
-laptop/__pycache__
 __pycache__
-secrets.py
 matrixportal/secrets.py

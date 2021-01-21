@@ -269,74 +269,24 @@ except:
     print('{:7,.0f}'.format(df['LA county'].loc['CDPH']),     "dead in LA county     (CDPH)")
 print("")
 
-# connect to Adafruit IO dashboard --------------------------------------------
-# Set your Adafruit IO Username and Key in secrets.py
-# (visit io.adafruit.com if you need to create an account,
-# or if you need your Adafruit IO key.)
-
-try:
-    # Get Adafruit IO usernamek and key from a secrets.py file
-    from secrets import secrets
-    aio_username = secrets["aio_username"]
-    aio_key = secrets["aio_key"]
-except ImportError:
-    # otherwise, get it from environment variables (github secrets)
-    import os
-    aio_username = os.environ.get('AIO_USERNAME')
-    aio_key = os.environ.get('AIO_KEY')
-
-# Initialize an Adafruit IO HTTP API object
-io = Client(aio_username, aio_key)
-
-print("\nconnecting to Adafruit IO, setting up feeds...")
-try:
-    # Get the 'la-deaths-cdph' feed from Adafruit IO
-    la_cdph_feed = io.feeds("la-deaths-cdph")
-    print("  got feed 1 of 4...")
-except RequestError:
-    # If no 'la-deaths-cdph' feed exists, create one
-    la_cdph_feed = io.create_feed(Feed(name="la-deaths-cdph"))
-
-try:
-    # Get the 'la-deaths-lat' feed from Adafruit IO
-    la_lat_feed = io.feeds("la-deaths-lat")
-    print("  got feed 2 of 4...")
-except RequestError:
-    # If no 'la-deaths-lat' feed exists, create one
-    la_lat_feed = io.create_feed(Feed(name="la-deaths-lat"))
-
-try:
-    # Get the 'us-deaths-cdc' feed from Adafruit IO
-    us_cdc_feed = io.feeds("us-deaths-cdc")
-    print("  got feed 3 of 4...")
-except RequestError:
-    # If no 'us-deaths-cdc' feed exists, create one
-    us_cdc_feed = io.create_feed(Feed(name="us-deaths-cdc"))
-
-try:
-    # Get the 'us-deaths-jhu' feed from Adafruit IO
-    us_jhu_feed = io.feeds("us-deaths-jhu")
-    print("  got feed 4 of 4...")
-except RequestError:
-    # If no 'us-deaths-jhu' feed exists, create one
-    us_jhu_feed = io.create_feed(Feed(name="us-deaths-jhu"))
+# send data to Adafruit IO ----------------------------------------------------
 
 def send_data(us_cdc, us_jhu, la_cdph, la_lat):
-    """send US and LA death data to Adafruit IO dashboard"""
+    """send US and LA death data to Adafruit IO dashboard using webhooks"""
     print("sending {0} to us-deaths-cdc feed...".format(us_cdc))
-    io.send_data(us_cdc_feed.key, us_cdc)
+    requests.post('https://io.adafruit.com/api/v2/webhooks/feed/j6tLwLjmtvSioUANcJhZGmUL6f4x', json={'value': us_cdc})
     print("  data sent!")
 
     print("sending {0} to us-deaths-jhu feed...".format(us_jhu))
-    io.send_data(us_jhu_feed.key, us_jhu)
+    requests.post('https://io.adafruit.com/api/v2/webhooks/feed/rBqBo7PagWriXn1Mn1jpQs9WjsdT', json={'value': us_jhu})
     print("  data sent!")
 
     print("sending {0} to la-deaths-cdph feed...".format(la_cdph))
-    io.send_data(la_cdph_feed.key, la_cdph)
+    requests.post('https://io.adafruit.com/api/v2/webhooks/feed/2UEJ6dCJDWAvvGJgT3RVxNNUkMk8', json={'value': la_cdph})
     print("  data sent!")
 
     print("sending {0} to la-deaths-lat feed...".format(la_lat))
-    io.send_data(la_lat_feed.key, la_lat)
+    requests.post('https://io.adafruit.com/api/v2/webhooks/feed/DPAXi8YPfagpA8c82QXSPPx6ott8', json={'value': la_lat})
     print("  data sent!")
 
 send_data(

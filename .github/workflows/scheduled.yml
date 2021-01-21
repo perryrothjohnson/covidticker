@@ -18,7 +18,4 @@ jobs:
       - name: install python dependencies
         run: pip install -r requirements.txt
       - name: run covidticker script to get the latest data
-        env:
-          aio_username: ${{ secrets.AIO_USERNAME }}
-          aio_key: ${{ secrets.AIO_KEY }}
         run: python covidticker.py
