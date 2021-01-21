@@ -3,28 +3,11 @@ A wall-mounted ticker, which updates daily with the total number of
 COVID-19 deaths for the United States and Los Angeles county.
 
 author:         Perry Roth-Johnson
-last modified:  18 Jan 2021
-version:        2.2
+last modified:  19 Jan 2021
+version:        2.3
 
-code was built on the following examples:
----
-esp32spi_simpletest.py
-https://learn.adafruit.com/adafruit-matrixportal-m4/internet-connect
----
-metro_matrix_clock.py
-https://learn.adafruit.com/network-connected-metro-rgb-matrix-clock/code-the-matrix-clock
----
-adafruit_io_simpletest.py
-https://learn.adafruit.com/adafruit-io-basics-airlift/circuitpython
----
-matrix_sprite_animation_player.py
-https://learn.adafruit.com/tombstone-matrix-portal/code-the-sprite-sheet-animation-display
----
-
-todo:
-*get covidticker2.py to run periodically (hourly?) on laptop
+---todo---
 change secrets.py with info from new wifi router we buy for exhibit
----optional---
 install heat sink and/or cooling fan onto Matrix Portal board?
 """
 
@@ -43,10 +26,13 @@ from adafruit_matrixportal.matrix import Matrix
 from adafruit_display_text.label import Label
 from adafruit_bitmap_font import bitmap_font
 
+### global variables ###
+
 DEBUG = False
 DEBUG_LOOP = False
 FANCY_FONT = True
 feeds = {
+    'still_alive' : None,
     'led_color': None,  # same as color[3]
     'us_toggle': None,
     'la_toggle': None,
@@ -107,7 +93,7 @@ wifi = adafruit_esp32spi_wifimanager.ESPSPI_WiFiManager(esp, secrets, status_lig
 
 ### Feeds ###
 
-# Setup all 7 feeds
+# Setup all 8 feeds
 cdph_feed = secrets["aio_username"] + "/feeds/la-deaths-cdph"
 lat_feed = secrets["aio_username"] + "/feeds/la-deaths-lat"
 cdc_feed = secrets["aio_username"] + "/feeds/us-deaths-cdc"
@@ -115,6 +101,7 @@ jhu_feed = secrets["aio_username"] + "/feeds/us-deaths-jhu"
 led_color_feed = secrets["aio_username"] + "/feeds/led-color"
 jhu_cdc_feed = secrets["aio_username"] + "/feeds/jhu-cdc"
 lat_cdph_feed = secrets["aio_username"] + "/feeds/lat-cdph"
+still_alive_feed = secrets["aio_username"] + "/feeds/still-alive"
 
 ### MQTT callback methods ###
 
@@ -125,27 +112,28 @@ def connected(client, userdata, flags, rc):
     print("Connected to Adafruit IO!")
     # subscribe to all changes on 4 feeds for sources of death data
     client.subscribe(cdph_feed)
-    display_data('AIO feed', '1/7')
+    display_data('AIO feed', '1/8')
     client.subscribe(lat_feed)
-    display_data('AIO feed', '2/7')
+    display_data('AIO feed', '2/8')
     client.subscribe(cdc_feed)
-    display_data('AIO feed', '3/7')
+    display_data('AIO feed', '3/8')
     client.subscribe(jhu_feed)
-    display_data('AIO feed', '4/7')
-    # Subscribe to all changes on 3 feeds for dashboard controls
+    display_data('AIO feed', '4/8')
+    # subscribe to all changes on 3 feeds for dashboard controls
     client.subscribe(led_color_feed)
-    display_data('AIO feed', '5/7')
+    display_data('AIO feed', '5/8')
     client.subscribe(jhu_cdc_feed)
-    display_data('AIO feed', '6/7')
+    display_data('AIO feed', '6/8')
     client.subscribe(lat_cdph_feed)
-    display_data('AIO feed', '7/7')
+    display_data('AIO feed', '7/8')
+    # subscribe to feed that checks if LED matrix is still alive
+    client.subscribe(still_alive_feed)
+    display_data('AIO feed', '8/8')
     time.sleep(1)
 
 def subscribe(client, userdata, topic, granted_qos):
     # This method is called when the client subscribes to a new feed.
     print("Listening for changes on feed", topic)
-    # print("  current data:", userdata)
-    # print("  QOS:", granted_qos)
 
 def disconnected(client, userdata, rc):
     # This method is called when the client is disconnected
@@ -155,6 +143,18 @@ def message(client, topic, message):
     # This method is called when a topic the client is subscribed to
     # has a new message.
     print("New message on topic {0}: {1}".format(topic, message))
+
+def on_still_alive_msg(client, topic, message):
+    # Method called whenever user/feeds/still-alive has a new value
+    # (scheduled trigger sets this feed to 0 every 30 minutes)
+    print(topic, message)
+    feeds['still_alive'] = int(message)
+    if int(message) == 0:
+        # once the Adafruit broker sends us a 0, set it back to 1
+        # to tell the dashboard that the LED display is still alive
+        mqtt_client.publish(still_alive_feed, 1)
+        feeds['still_alive'] = 1
+        print("  ...LED display is still alive!")
 
 def on_led_color_msg(client, topic, message):
     # Method called whenever user/feeds/led-color has a new value
@@ -306,6 +306,7 @@ time.sleep(1)
 # Connect the client to the MQTT broker.
 print("Connecting to Adafruit IO...")
 display_data('connecting', 'AdafruitIO')
+time.sleep(5)
 mqtt_client.connect()
 time.sleep(1)
 
@@ -317,11 +318,13 @@ mqtt_client.add_topic_callback(jhu_feed, on_us_jhu_msg)
 mqtt_client.add_topic_callback(led_color_feed, on_led_color_msg)
 mqtt_client.add_topic_callback(jhu_cdc_feed, on_jhu_cdc_msg)
 mqtt_client.add_topic_callback(lat_cdph_feed, on_lat_cdph_msg)
+mqtt_client.add_topic_callback(still_alive_feed, on_still_alive_msg)
 
 # initialize LED color to custom blue
 feeds['led_color'] = color[3]
 
 # get recent values on all the feeds
+mqtt_client.publish("{0}/get".format(still_alive_feed), "\0")
 mqtt_client.publish("{0}/get".format(led_color_feed), "\0")
 mqtt_client.publish("{0}/get".format(jhu_cdc_feed), "\0")
 mqtt_client.publish("{0}/get".format(lat_cdph_feed), "\0")
@@ -362,4 +365,4 @@ while True:
         else:
             display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'], font='vera')
 
-    time.sleep(2)
+    time.sleep(5)

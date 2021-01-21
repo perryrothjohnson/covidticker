@@ -1,4 +1,5 @@
-matrixportal/secrets.py
-laptop/secrets.py
 .github/workflows/scheduled.yml
-
+laptop/__pycache__
+laptop/secrets.py
+laptop/requirements.txt
+matrixportal/secrets.py
