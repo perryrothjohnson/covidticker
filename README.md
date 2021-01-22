@@ -16,6 +16,12 @@ The data is recorded on [Adafruit IO](https://io.adafruit.com/) and is updated h
 
 Code written in [CircuitPython](https://circuitpython.org/) runs on an [Adafruit Matrix Portal](https://www.adafruit.com/product/4745) circuit board, powered by [USB-C](https://www.adafruit.com/product/4298). The Matrix Portal uses the [MQTT protocol](https://learn.adafruit.com/mqtt-in-circuitpython/overview) to receive data posted on [Adafruit IO](https://io.adafruit.com/). It is connected to an [RGB LED matrix](https://www.adafruit.com/product/2276), which serves as the LED display ticker.
 
+## Hardware required
+
+- [Adafruit Matrix Portal - CircuitPython Powered Internet Display](https://www.adafruit.com/product/4745)  
+- [64x32 RGB LED Matrix - 6mm pitch](https://www.adafruit.com/product/2276) (if you don't need something this big, other 64x32 displays with a smaller pitch--like [5mm](https://www.adafruit.com/products/2277), [4mm](https://www.adafruit.com/products/2278), or [3mm](https://www.adafruit.com/products/2279)--should also work)  
+- [Official Raspberry Pi Power Supply 5.1V 3A with USB C - 1.5 meter long](https://www.adafruit.com/product/4298) (or similar USB-C power supply)
+
 ## Usage
 
 1. [Install CircuitPython on your Matrix Portal board](https://learn.adafruit.com/matrix-portal-new-guide-scroller/install-circuitpython). Also see detailed instructions [here](https://learn.adafruit.com/welcome-to-circuitpython/installing-circuitpython).  
