@@ -2,7 +2,7 @@
 
 ![fetch latest data and deploy to Adafruit IO](https://github.com/perryrothjohnson/covidticker/workflows/fetch%20latest%20data%20and%20deploy%20to%20Adafruit%20IO/badge.svg)
 
-_How many people have died in the United States and in Los Angeles county?_ Every hour, fetch the data and display it on a wall-mounted LED display ticker--similar to the one shown in [this project](https://learn.adafruit.com/matrix-portal-new-guide-scroller/overview).
+_How many people have died in the United States and in Los Angeles county during the COVID-19 pandemic?_ Every hour, fetch the data and display it on a wall-mounted LED display ticker--similar to the one shown in [this project](https://learn.adafruit.com/matrix-portal-new-guide-scroller/overview).
 
 A Python script pulls data from the following sources:  
 - US deaths
