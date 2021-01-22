@@ -4,7 +4,7 @@
 
 _How many people have died in the United States and in Los Angeles county during the COVID-19 pandemic?_ Every hour, fetch the data and display it on a wall-mounted LED display ticker--similar to the one shown in [this project](https://learn.adafruit.com/matrix-portal-new-guide-scroller/overview).
 
-A Python script pulls data from the following sources:  
+A [Python script](https://github.com/perryrothjohnson/covidticker/blob/main/covidticker.py) pulls data from the following sources:  
 - US deaths
   - [CSSEGISandData/COVID-19](https://github.com/CSSEGISandData/COVID-19) by Johns Hopkins University Center for Systems Science and Engineering  
   - [Centers for Disease Control (CDC)](https://data.cdc.gov/Case-Surveillance/United-States-COVID-19-Cases-and-Deaths-by-State-o/9mfq-cb36)  
