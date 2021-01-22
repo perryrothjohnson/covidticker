@@ -3,8 +3,8 @@ A wall-mounted ticker, which updates daily with the total number of
 COVID-19 deaths for the United States and Los Angeles county.
 
 author:         Perry Roth-Johnson
-last modified:  19 Jan 2021
-version:        2.3
+last modified:  21 Jan 2021
+version:        2.4
 
 ---todo---
 change secrets.py with info from new wifi router we buy for exhibit
@@ -111,29 +111,29 @@ def connected(client, userdata, flags, rc):
     # successfully to the broker.
     print("Connected to Adafruit IO!")
     # subscribe to all changes on 4 feeds for sources of death data
-    client.subscribe(cdph_feed)
+    client.subscribe(cdph_feed, qos=1)
     display_data('AIO feed', '1/8')
-    client.subscribe(lat_feed)
+    client.subscribe(lat_feed, qos=1)
     display_data('AIO feed', '2/8')
-    client.subscribe(cdc_feed)
+    client.subscribe(cdc_feed, qos=1)
     display_data('AIO feed', '3/8')
-    client.subscribe(jhu_feed)
+    client.subscribe(jhu_feed, qos=1)
     display_data('AIO feed', '4/8')
     # subscribe to all changes on 3 feeds for dashboard controls
-    client.subscribe(led_color_feed)
+    client.subscribe(led_color_feed, qos=1)
     display_data('AIO feed', '5/8')
-    client.subscribe(jhu_cdc_feed)
+    client.subscribe(jhu_cdc_feed, qos=1)
     display_data('AIO feed', '6/8')
-    client.subscribe(lat_cdph_feed)
+    client.subscribe(lat_cdph_feed, qos=1)
     display_data('AIO feed', '7/8')
     # subscribe to feed that checks if LED matrix is still alive
-    client.subscribe(still_alive_feed)
+    client.subscribe(still_alive_feed, qos=1)
     display_data('AIO feed', '8/8')
     time.sleep(1)
 
 def subscribe(client, userdata, topic, granted_qos):
     # This method is called when the client subscribes to a new feed.
-    print("Listening for changes on feed", topic)
+    print("Listening for changes on feed", topic, "  QOS:", granted_qos)
 
 def disconnected(client, userdata, rc):
     # This method is called when the client is disconnected
