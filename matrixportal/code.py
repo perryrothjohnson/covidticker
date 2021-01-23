@@ -3,8 +3,8 @@ A wall-mounted ticker, which updates daily with the total number of
 COVID-19 deaths for the United States and Los Angeles county.
 
 author:         Perry Roth-Johnson
-last modified:  21 Jan 2021
-version:        2.4
+last modified:  22 Jan 2021
+version:        2.5
 
 ---todo---
 change secrets.py with info from new wifi router we buy for exhibit
@@ -337,6 +337,7 @@ feeds['led_color'] = color[3]
 
 # initialize loop_delay to 2 seconds
 feeds['loop_delay'] = 2
+mqtt_client.publish(loop_delay_feed, feeds['loop_delay'])
 
 # get recent values on all the feeds
 mqtt_client.publish("{0}/get".format(still_alive_feed), "\0")
@@ -351,35 +352,37 @@ mqtt_client.publish("{0}/get".format(cdph_feed), "\0")
 
 
 while True:
-    # Poll the message queue
-    mqtt_client.loop()
-
-    if DEBUG_LOOP:
-        print('-' * 40)
-        print(feeds)
-
-    # display the top number (US deaths)
-    if feeds['us_toggle'] == 'JHU':
-        if not FANCY_FONT:
-            display_data(top_text=feeds['jhu_count'])
-        else:
-            display_data(top_text=feeds['jhu_count'], top_color=feeds['led_color'], font='vera')
-    elif feeds['us_toggle'] == 'CDC':
-        if not FANCY_FONT:
-            display_data(top_text=feeds['cdc_count'])
-        else:
-            display_data(top_text=feeds['cdc_count'], top_color=feeds['led_color'], font='vera')
-
-    # display the bottom number (LA county deaths)
-    if feeds['la_toggle'] == 'LAT':
-        if not FANCY_FONT:
-            display_data(bottom_text=feeds['lat_count'])
-        else:
-            display_data(bottom_text=feeds['lat_count'], bottom_color=feeds['led_color'], font='vera')
-    elif feeds['la_toggle'] == 'CDPH':
-        if not FANCY_FONT:
-            display_data(bottom_text=feeds['cdph_count'])
-        else:
-            display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'], font='vera')
-
+    try:
+        # Poll the message queue
+        mqtt_client.loop()
+        # print the dictionary of feeds to the screen?
+        if DEBUG_LOOP:
+            print('-' * 40)
+            print(feeds)
+        # display the top number (US deaths)
+        if feeds['us_toggle'] == 'JHU':
+            if not FANCY_FONT:
+                display_data(top_text=feeds['jhu_count'])
+            else:
+                display_data(top_text=feeds['jhu_count'], top_color=feeds['led_color'], font='vera')
+        elif feeds['us_toggle'] == 'CDC':
+            if not FANCY_FONT:
+                display_data(top_text=feeds['cdc_count'])
+            else:
+                display_data(top_text=feeds['cdc_count'], top_color=feeds['led_color'], font='vera')
+        # display the bottom number (LA county deaths)
+        if feeds['la_toggle'] == 'LAT':
+            if not FANCY_FONT:
+                display_data(bottom_text=feeds['lat_count'])
+            else:
+                display_data(bottom_text=feeds['lat_count'], bottom_color=feeds['led_color'], font='vera')
+        elif feeds['la_toggle'] == 'CDPH':
+            if not FANCY_FONT:
+                display_data(bottom_text=feeds['cdph_count'])
+            else:
+                display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'], font='vera')
+    except (ValueError, RuntimeError) as e:
+        print("Some error occurred, retrying!\n", e)
+        wifi.reset()
+        continue
     time.sleep(feeds['loop_delay'])
