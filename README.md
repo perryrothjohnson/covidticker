@@ -21,7 +21,7 @@ Code written in [CircuitPython](https://circuitpython.org/) runs on an [Adafruit
 ## Hardware required
 
 - [Adafruit Matrix Portal - CircuitPython Powered Internet Display](https://www.adafruit.com/product/4745)  
-- [64x32 RGB LED Matrix - 6mm pitch](https://www.adafruit.com/product/2276) (if you don't need something this big, other 64x32 displays with a smaller pitch--like [5mm](https://www.adafruit.com/products/2277), [4mm](https://www.adafruit.com/products/2278), or [3mm](https://www.adafruit.com/products/2279)--should also work)  
+- [64x32 RGB LED Matrix - 6mm pitch](https://www.adafruit.com/product/2276) (NOTE: if you don't need something this big, other 64x32 displays with smaller spacing between pixels (i.e., pitch) should also work: [5mm](https://www.adafruit.com/products/2277), [4mm](https://www.adafruit.com/products/2278), or [3mm](https://www.adafruit.com/products/2279))  
 - [Official Raspberry Pi Power Supply 5.1V 3A with USB C - 1.5 meter long](https://www.adafruit.com/product/4298) (or similar USB-C power supply)
 
 ## Usage
