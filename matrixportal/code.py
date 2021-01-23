@@ -33,6 +33,7 @@ DEBUG_LOOP = False
 FANCY_FONT = True
 feeds = {
     'still_alive' : None,
+    'loop_delay' : None,
     'led_color': None,  # same as color[3]
     'us_toggle': None,
     'la_toggle': None,
@@ -101,6 +102,7 @@ jhu_feed = secrets["aio_username"] + "/feeds/us-deaths-jhu"
 led_color_feed = secrets["aio_username"] + "/feeds/led-color"
 jhu_cdc_feed = secrets["aio_username"] + "/feeds/jhu-cdc"
 lat_cdph_feed = secrets["aio_username"] + "/feeds/lat-cdph"
+loop_delay_feed = secrets["aio_username"] + "/feeds/loop-delay"
 still_alive_feed = secrets["aio_username"] + "/feeds/still-alive"
 
 ### MQTT callback methods ###
@@ -110,25 +112,29 @@ def connected(client, userdata, flags, rc):
     # This function will be called when the client is connected
     # successfully to the broker.
     print("Connected to Adafruit IO!")
+    # set quality of service (QOS) level
+    QOS_level = 0
     # subscribe to all changes on 4 feeds for sources of death data
-    client.subscribe(cdph_feed, qos=1)
-    display_data('AIO feed', '1/8')
-    client.subscribe(lat_feed, qos=1)
-    display_data('AIO feed', '2/8')
-    client.subscribe(cdc_feed, qos=1)
-    display_data('AIO feed', '3/8')
-    client.subscribe(jhu_feed, qos=1)
-    display_data('AIO feed', '4/8')
-    # subscribe to all changes on 3 feeds for dashboard controls
-    client.subscribe(led_color_feed, qos=1)
-    display_data('AIO feed', '5/8')
-    client.subscribe(jhu_cdc_feed, qos=1)
-    display_data('AIO feed', '6/8')
-    client.subscribe(lat_cdph_feed, qos=1)
-    display_data('AIO feed', '7/8')
+    client.subscribe(cdph_feed, qos=QOS_level)
+    display_data('AIO feed', '1/9')
+    client.subscribe(lat_feed, qos=QOS_level)
+    display_data('AIO feed', '2/9')
+    client.subscribe(cdc_feed, qos=QOS_level)
+    display_data('AIO feed', '3/9')
+    client.subscribe(jhu_feed, qos=QOS_level)
+    display_data('AIO feed', '4/9')
+    # subscribe to all changes on 4 feeds for dashboard controls
+    client.subscribe(led_color_feed, qos=QOS_level)
+    display_data('AIO feed', '5/9')
+    client.subscribe(jhu_cdc_feed, qos=QOS_level)
+    display_data('AIO feed', '6/9')
+    client.subscribe(lat_cdph_feed, qos=QOS_level)
+    display_data('AIO feed', '7/9')
+    client.subscribe(loop_delay_feed, qos=QOS_level)
+    display_data('AIO feed', '8/9')
     # subscribe to feed that checks if LED matrix is still alive
-    client.subscribe(still_alive_feed, qos=1)
-    display_data('AIO feed', '8/8')
+    client.subscribe(still_alive_feed, qos=QOS_level)
+    display_data('AIO feed', '9/9')
     time.sleep(1)
 
 def subscribe(client, userdata, topic, granted_qos):
@@ -155,6 +161,11 @@ def on_still_alive_msg(client, topic, message):
         mqtt_client.publish(still_alive_feed, 1)
         feeds['still_alive'] = 1
         print("  ...LED display is still alive!")
+
+def on_loop_delay_msg(client, topic, message):
+    # Method called whenever user/feeds/loop-delay has a new value
+    print(topic, message)
+    feeds['loop_delay'] = int(message)
 
 def on_led_color_msg(client, topic, message):
     # Method called whenever user/feeds/led-color has a new value
@@ -318,13 +329,18 @@ mqtt_client.add_topic_callback(jhu_feed, on_us_jhu_msg)
 mqtt_client.add_topic_callback(led_color_feed, on_led_color_msg)
 mqtt_client.add_topic_callback(jhu_cdc_feed, on_jhu_cdc_msg)
 mqtt_client.add_topic_callback(lat_cdph_feed, on_lat_cdph_msg)
+mqtt_client.add_topic_callback(loop_delay_feed, on_loop_delay_msg)
 mqtt_client.add_topic_callback(still_alive_feed, on_still_alive_msg)
 
 # initialize LED color to custom blue
 feeds['led_color'] = color[3]
 
+# initialize loop_delay to 2 seconds
+feeds['loop_delay'] = 2
+
 # get recent values on all the feeds
 mqtt_client.publish("{0}/get".format(still_alive_feed), "\0")
+mqtt_client.publish("{0}/get".format(loop_delay_feed), "\0")
 mqtt_client.publish("{0}/get".format(led_color_feed), "\0")
 mqtt_client.publish("{0}/get".format(jhu_cdc_feed), "\0")
 mqtt_client.publish("{0}/get".format(lat_cdph_feed), "\0")
@@ -341,8 +357,8 @@ while True:
     if DEBUG_LOOP:
         print('-' * 40)
         print(feeds)
-        print(color[3])
 
+    # display the top number (US deaths)
     if feeds['us_toggle'] == 'JHU':
         if not FANCY_FONT:
             display_data(top_text=feeds['jhu_count'])
@@ -354,6 +370,7 @@ while True:
         else:
             display_data(top_text=feeds['cdc_count'], top_color=feeds['led_color'], font='vera')
 
+    # display the bottom number (LA county deaths)
     if feeds['la_toggle'] == 'LAT':
         if not FANCY_FONT:
             display_data(bottom_text=feeds['lat_count'])
@@ -365,4 +382,4 @@ while True:
         else:
             display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'], font='vera')
 
-    time.sleep(5)
+    time.sleep(feeds['loop_delay'])
