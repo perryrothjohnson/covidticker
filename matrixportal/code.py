@@ -3,8 +3,8 @@ A wall-mounted ticker, which updates daily with the total number of
 COVID-19 deaths for the United States and Los Angeles county.
 
 author:         Perry Roth-Johnson
-last modified:  22 Jan 2021
-version:        2.5
+last modified:  23 Jan 2021
+version:        2.6
 
 ---todo---
 change secrets.py with info from new wifi router we buy for exhibit
@@ -33,6 +33,7 @@ DEBUG_LOOP = False
 FANCY_FONT = True
 feeds = {
     'still_alive' : None,
+    'loop_error' : None,
     'loop_delay' : None,
     'led_color': None,  # same as color[3]
     'us_toggle': None,
@@ -103,6 +104,7 @@ led_color_feed = secrets["aio_username"] + "/feeds/led-color"
 jhu_cdc_feed = secrets["aio_username"] + "/feeds/jhu-cdc"
 lat_cdph_feed = secrets["aio_username"] + "/feeds/lat-cdph"
 loop_delay_feed = secrets["aio_username"] + "/feeds/loop-delay"
+loop_error_feed = secrets["aio_username"] + "/feeds/loop-error"
 still_alive_feed = secrets["aio_username"] + "/feeds/still-alive"
 
 ### MQTT callback methods ###
@@ -116,25 +118,27 @@ def connected(client, userdata, flags, rc):
     QOS_level = 0
     # subscribe to all changes on 4 feeds for sources of death data
     client.subscribe(cdph_feed, qos=QOS_level)
-    display_data('AIO feed', '1/9')
+    display_data('AIO feed', '1/10')
     client.subscribe(lat_feed, qos=QOS_level)
-    display_data('AIO feed', '2/9')
+    display_data('AIO feed', '2/10')
     client.subscribe(cdc_feed, qos=QOS_level)
-    display_data('AIO feed', '3/9')
+    display_data('AIO feed', '3/10')
     client.subscribe(jhu_feed, qos=QOS_level)
-    display_data('AIO feed', '4/9')
+    display_data('AIO feed', '4/10')
     # subscribe to all changes on 4 feeds for dashboard controls
     client.subscribe(led_color_feed, qos=QOS_level)
-    display_data('AIO feed', '5/9')
+    display_data('AIO feed', '5/10')
     client.subscribe(jhu_cdc_feed, qos=QOS_level)
-    display_data('AIO feed', '6/9')
+    display_data('AIO feed', '6/10')
     client.subscribe(lat_cdph_feed, qos=QOS_level)
-    display_data('AIO feed', '7/9')
+    display_data('AIO feed', '7/10')
     client.subscribe(loop_delay_feed, qos=QOS_level)
-    display_data('AIO feed', '8/9')
-    # subscribe to feed that checks if LED matrix is still alive
+    display_data('AIO feed', '8/10')
+    # subscribe to all changes on 2 feeds to check if LED matrix is working
     client.subscribe(still_alive_feed, qos=QOS_level)
-    display_data('AIO feed', '9/9')
+    display_data('AIO feed', '9/10')
+    client.subscribe(loop_error_feed, qos=QOS_level)
+    display_data('AIO feed', '10/10')
     time.sleep(1)
 
 def subscribe(client, userdata, topic, granted_qos):
@@ -321,7 +325,7 @@ time.sleep(5)
 mqtt_client.connect()
 time.sleep(1)
 
-# Set up a message handler for all the feeds
+# Set up a message handler for all the feeds (except loop-error)
 mqtt_client.add_topic_callback(cdph_feed, on_la_cdph_msg)
 mqtt_client.add_topic_callback(lat_feed, on_la_lat_msg)
 mqtt_client.add_topic_callback(cdc_feed, on_us_cdc_msg)
@@ -339,7 +343,7 @@ feeds['led_color'] = color[3]
 feeds['loop_delay'] = 2
 mqtt_client.publish(loop_delay_feed, feeds['loop_delay'])
 
-# get recent values on all the feeds
+# get recent values on all the feeds (except loop-error)
 mqtt_client.publish("{0}/get".format(still_alive_feed), "\0")
 mqtt_client.publish("{0}/get".format(loop_delay_feed), "\0")
 mqtt_client.publish("{0}/get".format(led_color_feed), "\0")
@@ -359,6 +363,9 @@ while True:
         if DEBUG_LOOP:
             print('-' * 40)
             print(feeds)
+        # publish latest error message to Adafruit IO
+        if feeds['loop_error'] != None:
+            mqtt_client.publish(loop_error_feed, feeds['loop_error'])
         # display the top number (US deaths)
         if feeds['us_toggle'] == 'JHU':
             if not FANCY_FONT:
@@ -382,7 +389,8 @@ while True:
             else:
                 display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'], font='vera')
     except (ValueError, RuntimeError) as e:
-        print("Some error occurred, retrying!\n", e)
-        wifi.reset()
-        continue
+        feeds['loop_error'] = "Some error occured, retrying!\n" + e
+        print(feeds['loop_error'])
+        # wifi.reset()
+        # continue
     time.sleep(feeds['loop_delay'])
