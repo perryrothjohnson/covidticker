@@ -30,7 +30,7 @@ except:
     world_deaths = None
 finally:
     r.close()
-johnshopkins = pd.Series([world_deaths, us_deaths], index=['world', 'US'], name='Johns Hopkins api')
+johnshopkins_api = pd.Series([world_deaths, us_deaths], index=['world', 'US'], name='JHU api')
 
 def jhu_data_url(year, month, day, region='US'):
     date = '{:02}'.format(month) + '-' + '{:02}'.format(day) + '-' + '{:04}'.format(year)
@@ -44,7 +44,7 @@ def jhu_data_url(year, month, day, region='US'):
     return JHU_URL
 
 # Johns Hopkins github; pandas
-print("pulling from Johns Hopkins github with pandas...")
+print("pulling from Johns Hopkins github...")
 # US deaths
 try:
     y = time.localtime()[0]
@@ -103,7 +103,7 @@ except:
     world_deaths = None
 finally:
     r.close()
-johnshopkins_github_pandas = pd.Series([world_deaths, us_deaths], index=['world', 'US'], name='Johns Hopkins gh')
+johnshopkins_github = pd.Series([world_deaths, us_deaths], index=['world', 'US'], name='JHU github')
 
 
 # COVID Tracking Project ------------------------------------------------------
@@ -124,7 +124,7 @@ except:
     ca_deaths = None
 finally:
     r.close()
-covidtrackingproject = pd.Series([us_deaths, ca_deaths], index=['US', 'CA'], name='COVID Trk Proj')
+covidtrackingproject = pd.Series([us_deaths, ca_deaths], index=['US', 'CA'], name='COVID Track Proj')
 
 # CDC -------------------------------------------------------------------------
 print("pulling from the CDC...")
@@ -190,10 +190,10 @@ except:
     ca_deaths = None
 finally:
     r.close()
-latimes = pd.Series([la_deaths, ca_deaths], index=['LA county', 'CA'], name='LA Times api')
+latimes_api = pd.Series([la_deaths, ca_deaths], index=['LA county', 'CA'], name='LAT api')
 
 # LA Times github; pandas
-print("pulling from the LA Times github with pandas...")
+print("pulling from the LA Times github...")
 # LA deaths
 try:
     URL = 'https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/latimes-county-totals.csv'
@@ -207,7 +207,7 @@ try:
     ca_deaths = sum(df[df['date'] == latest_date]['deaths'])
 except:
     ca_deaths = None
-latimes_github_pandas = pd.Series([la_deaths, ca_deaths], index=['LA county', 'CA'], name='LA Times gh')
+latimes_github = pd.Series([la_deaths, ca_deaths], index=['LA county', 'CA'], name='LAT github')
 
 
 # CA Dept of Public Health ----------------------------------------------------
@@ -235,14 +235,14 @@ california = pd.Series([ca_deaths, la_deaths], index=['CA', 'LA county'], name='
 
 # save all the data into a table, then transpose it to display sources as rows and death regions as columns
 df = pd.concat([
-    johnshopkins_github_pandas,
+    johnshopkins_github,
+    johnshopkins_api,
+    latimes_github,
+    latimes_api,
     cdc,
-    latimes_github_pandas,
     california,
     who,
-    covidtrackingproject,
-    johnshopkins,
-    latimes
+    covidtrackingproject
     ], axis=1).T
 df = df.rename(columns={
     "world": "world", 
@@ -257,8 +257,8 @@ if print_table:
     print(df)
     print("")
 
-print('{:7,.0f}'.format(df['United States'].loc['Johns Hopkins github']), "dead in United States (JHU)")
-print('{:7,.0f}'.format(df['LA county'].loc['LA Times github']), "dead in LA county     (LAT)")
+print('{:7,.0f}'.format(df['United States'].loc['JHU github']), "dead in United States (JHU)")
+print('{:7,.0f}'.format(df['LA county'].loc['LAT github']),     "dead in LA county     (LAT)")
 print("")
 
 # send data to Adafruit IO ----------------------------------------------------
@@ -283,7 +283,7 @@ def send_data(us_cdc, us_jhu, la_cdph, la_lat):
 
 send_data(
     us_cdc=int(df['United States'].loc['CDC']),
-    us_jhu=int(df['United States'].loc['Johns Hopkins github']),
+    us_jhu=int(df['United States'].loc['JHU github']),
     la_cdph=int(df['LA county'].loc['CDPH']),
-    la_lat=int(df['LA county'].loc['LA Times github'])
+    la_lat=int(df['LA county'].loc['LAT github'])
     )
