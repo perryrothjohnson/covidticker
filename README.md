@@ -20,6 +20,31 @@ The data is recorded on [Adafruit IO](https://io.adafruit.com/) and is updated h
 
 Code written in [CircuitPython](https://circuitpython.org/) runs on an [Adafruit Matrix Portal](https://www.adafruit.com/product/4745) circuit board, powered by [USB-C](https://www.adafruit.com/product/4298). The Matrix Portal uses the [MQTT protocol](https://learn.adafruit.com/mqtt-in-circuitpython/overview) to receive data posted on [Adafruit IO](https://io.adafruit.com/). It is connected to an [RGB LED matrix](https://www.adafruit.com/product/2276), which serves as the LED display ticker.
 
+## Adafruit IO feeds
+
+If you don't already have one, you'll also need to setup an Adafruit IO account with the following feeds. The first 4 feeds store the US and LA county deaths from a [scheduled GitHub Action](https://github.com/perryrothjohnson/covidticker/blob/main/.github/workflows/scheduled.yml).  The next 4 feeds can be controlled from a dashboard (pictured above) to change the LED display's appearance or performance. The final 2 feeds monitor the LED display for crashes and errors.
+
+| feed name        | key              | description                                                                         |
+| :--------------- | :--------------- | :---------------------------------------------------------------------------------- |
+| US deaths (JHU)  | `us-deaths-jhu`  | COVID-19 deaths in the United States, according to Johns Hopkins University         |
+| US deaths (CDC)  | `us-deaths-cdc`  | COVID-19 deaths in the United States, according to the CDC                          |
+| LA deaths (LAT)  | `la-deaths-lat`  | COVID-19 deaths in Los Angeles County, according to the LA Times                    |
+| LA deaths (CDPH) | `la-deaths-cdph` | COVID-19 deaths in Los Angeles County, according to the CA Dept of Public Health    |
+| JHU-CDC          | `jhu-cdc`        | toggle US data source between Johns Hopkins or Centers for Disease Control          |
+| LAT-CDPH         | `lat-cdph`       | toggle LA county data source between LA Times or CA Dept of Public Health           |
+| LED color        | `led-color`      | choose a text color for the LED matrix display                                      |
+| loop delay       | `loop-delay`     | how many seconds to wait between executions of the main loop?                       |
+| still alive?     | `still-alive`    | if 1: LED display is still alive; if 0 (for a long time): it has crashed            |
+| loop error       | `loop-error`     | error messages encountered during the main loop                                     |
+
+### Webhooks
+
+The [Python script](https://github.com/perryrothjohnson/covidticker/blob/main/covidticker.py) publishes data to Adafruit IO using webhooks. You'll need to generate your own unique webhook URLs for the first 4 feeds listed above, and replace the URLs in each of the `requests.post()` calls in the `send_data()` method. For example, the `us-deaths-jhu` feed would look like this:
+```python
+requests.post('[INSERT WEBHOOK URL HERE]', json={'value': us_jhu})
+```
+More information is available in [the docs](https://io.adafruit.com/api/docs/#send-data-via-webhook) and [this blog post](https://io.adafruit.com/blog/notebook/2018/11/26/feed-webhooks/).
+
 ## Hardware required
 
 - [Adafruit Matrix Portal - CircuitPython Powered Internet Display](https://www.adafruit.com/product/4745)  
