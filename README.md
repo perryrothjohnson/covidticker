@@ -64,7 +64,7 @@ More information is available in [the docs](https://io.adafruit.com/api/docs/#se
 This project was heavily inspired by these projects:  
 - Adafruit: [Matrix Portal New Guide Scroller](https://learn.adafruit.com/matrix-portal-new-guide-scroller/overview)  
 - Hackaday: [Stay Informed: How To Pull Your Own COVID-19 Data](https://hackaday.com/2020/03/26/stay-informed-how-to-pull-your-own-covid-19-data/)  
-- [simonw/covid-19-datasette](https://github.com/simonw/covid-19-datasette), deploys an API to [https://covid-19.datasettes.com/](https://covid-19.datasettes.com/) with Johns Hopkins and LA Times data
+- [simonw/covid-19-datasette](https://github.com/simonw/covid-19-datasette), deploys an API to [https://covid-19.datasettes.com/](https://covid-19.datasettes.com/) with JHU & LA Times data
 - [julianbruegger/corona-display](https://github.com/julianbruegger/corona-display), an LCD ticker run by a Raspberry Pi  
 - Adafruit: [Network Connected RGB Matrix Clock](https://learn.adafruit.com/network-connected-metro-rgb-matrix-clock/overview)  
 - Adafruit: [Tombstone Matrix Portal](https://learn.adafruit.com/tombstone-matrix-portal/overview)  
