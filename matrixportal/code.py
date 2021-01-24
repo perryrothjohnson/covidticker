@@ -3,8 +3,8 @@ A wall-mounted ticker, which updates daily with the total number of
 COVID-19 deaths for the United States and Los Angeles county.
 
 author:         Perry Roth-Johnson
-last modified:  23 Jan 2021
-version:        2.6
+last modified:  24 Jan 2021
+version:        2.7
 
 ---todo---
 change secrets.py with info from new wifi router we buy for exhibit
@@ -241,11 +241,15 @@ def on_us_jhu_msg(client, topic, message):
 
 ### LED matrix functions ###
 
-def display_data(top_text=None, bottom_text=None, top_color=color[1], bottom_color=color[2], font='std'):
+def display_data(top_text=None, bottom_text=None, top_color=color[1], bottom_color=color[2], font='std', million_deaths=False):
     """display death counts on LED matrix display"""
     if font == 'vera':
-        top_label.font = vera_font
-        bottom_label.font = vera_font
+        if million_deaths:
+            top_label.font = std_font
+            bottom_label.font = std_font
+        else:
+            top_label.font = vera_font
+            bottom_label.font = vera_font
     else:
         top_label.font = std_font
         bottom_label.font = std_font
@@ -254,7 +258,10 @@ def display_data(top_text=None, bottom_text=None, top_color=color[1], bottom_col
     if top_text is not None:
         top_label.color = top_color
         if font == 'vera':
-            top_label.text = '{:7,}'.format(top_text)
+            if million_deaths:
+                top_label.text = '{:9,}'.format(top_text)
+            else:
+                top_label.text = '{:7,}'.format(top_text)
         else:
             top_label.text = '{:9,}'.format(top_text)
         tbbx, tbby, tbbw, tbbh = top_label.bounding_box
@@ -273,7 +280,10 @@ def display_data(top_text=None, bottom_text=None, top_color=color[1], bottom_col
     if bottom_text is not None:
         bottom_label.color = bottom_color
         if font == 'vera':
-            bottom_label.text = '{:7,}'.format(bottom_text)
+            if million_deaths:
+                bottom_label.text = '{:9,}'.format(bottom_text)
+            else:
+                bottom_label.text = '{:7,}'.format(bottom_text)
         else:
             bottom_label.text = '{:9,}'.format(bottom_text)
         bbbx, bbby, bbbw, bbbh = bottom_label.bounding_box
@@ -388,9 +398,8 @@ while True:
                 display_data(bottom_text=feeds['cdph_count'])
             else:
                 display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'], font='vera')
-    except (ValueError, RuntimeError) as e:
-        feeds['loop_error'] = "Some error occured, retrying!\n" + e
+    except:
+        feeds['loop_error'] = "Some error occured, retrying!"
         print(feeds['loop_error'])
-        # wifi.reset()
-        # continue
-    time.sleep(feeds['loop_delay'])
+    finally:
+        time.sleep(feeds['loop_delay'])
