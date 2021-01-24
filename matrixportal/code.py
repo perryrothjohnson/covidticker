@@ -4,7 +4,7 @@ COVID-19 deaths for the United States and Los Angeles county.
 
 author:         Perry Roth-Johnson
 last modified:  24 Jan 2021
-version:        2.7
+version:        2.8
 
 ---todo---
 change secrets.py with info from new wifi router we buy for exhibit
@@ -367,7 +367,7 @@ mqtt_client.publish("{0}/get".format(cdph_feed), "\0")
 
 while True:
     try:
-        # Poll the message queue
+        # check incoming subscription messages from Adafruit IO
         mqtt_client.loop()
         # print the dictionary of feeds to the screen?
         if DEBUG_LOOP:
@@ -398,8 +398,18 @@ while True:
                 display_data(bottom_text=feeds['cdph_count'])
             else:
                 display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'], font='vera')
-    except:
-        feeds['loop_error'] = "Some error occured, retrying!"
+    except (ValueError, RuntimeError) as e:
+        feeds['loop_error'] = "Failed to get data, retrying!\n" + e
         print(feeds['loop_error'])
-    finally:
-        time.sleep(feeds['loop_delay'])
+        # reconnect to WiFi and Adafruit IO
+        wifi.reset()
+        mqtt_client.reconnect()
+        continue
+    except:
+        feeds['loop_error'] = "Some other error, retrying!"
+        print(feeds['loop_error'])
+        # reconnect to WiFi and Adafruit IO
+        wifi.reset()
+        mqtt_client.reconnect()
+        continue
+    time.sleep(feeds['loop_delay'])

@@ -103,7 +103,7 @@ except:
     world_deaths = None
 finally:
     r.close()
-johnshopkins_github_pandas = pd.Series([world_deaths, us_deaths], index=['world', 'US'], name='Johns Hopkins github')
+johnshopkins_github_pandas = pd.Series([world_deaths, us_deaths], index=['world', 'US'], name='Johns Hopkins gh')
 
 
 # COVID Tracking Project ------------------------------------------------------
@@ -124,7 +124,7 @@ except:
     ca_deaths = None
 finally:
     r.close()
-covidtrackingproject = pd.Series([us_deaths, ca_deaths], index=['US', 'CA'], name='COVID Tracking Project')
+covidtrackingproject = pd.Series([us_deaths, ca_deaths], index=['US', 'CA'], name='COVID Trk Proj')
 
 # CDC -------------------------------------------------------------------------
 print("pulling from the CDC...")
@@ -207,7 +207,7 @@ try:
     ca_deaths = sum(df[df['date'] == latest_date]['deaths'])
 except:
     ca_deaths = None
-latimes_github_pandas = pd.Series([la_deaths, ca_deaths], index=['LA county', 'CA'], name='LA Times github')
+latimes_github_pandas = pd.Series([la_deaths, ca_deaths], index=['LA county', 'CA'], name='LA Times gh')
 
 
 # CA Dept of Public Health ----------------------------------------------------
