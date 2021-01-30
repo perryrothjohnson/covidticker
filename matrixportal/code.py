@@ -3,8 +3,8 @@ A wall-mounted ticker, which updates daily with the total number of
 COVID-19 deaths for the United States and Los Angeles county.
 
 author:         Perry Roth-Johnson
-last modified:  24 Jan 2021
-version:        2.8
+last modified:  30 Jan 2021
+version:        2.9
 
 ---todo---
 change secrets.py with info from new wifi router we buy for exhibit
@@ -25,6 +25,7 @@ import terminalio
 from adafruit_matrixportal.matrix import Matrix
 from adafruit_display_text.label import Label
 from adafruit_bitmap_font import bitmap_font
+import adafruit_logging as logging
 
 ### global variables ###
 
@@ -317,8 +318,13 @@ mqtt_client = MQTT.MQTT(
     broker="io.adafruit.com",
     username=secrets["aio_username"],
     password=secrets["aio_key"],
-    client_id="covidticker"
+    client_id="covidticker",
+    log=True,
+    keep_alive=60
 )
+
+# set logging priority level
+mqtt_client.set_logger_level("DEBUG")
 
 # Setup the callback methods above
 mqtt_client.on_connect = connected
@@ -365,6 +371,7 @@ mqtt_client.publish("{0}/get".format(cdc_feed), "\0")
 mqtt_client.publish("{0}/get".format(cdph_feed), "\0")
 
 
+# run_num = 0
 while True:
     try:
         # check incoming subscription messages from Adafruit IO
@@ -400,13 +407,6 @@ while True:
                 display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'], font='vera')
     except (ValueError, RuntimeError) as e:
         feeds['loop_error'] = "Failed to get data, retrying!\n" + e
-        print(feeds['loop_error'])
-        # reconnect to WiFi and Adafruit IO
-        wifi.reset()
-        mqtt_client.reconnect()
-        continue
-    except:
-        feeds['loop_error'] = "Some other error, retrying!"
         print(feeds['loop_error'])
         # reconnect to WiFi and Adafruit IO
         wifi.reset()
