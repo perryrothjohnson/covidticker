@@ -371,7 +371,6 @@ mqtt_client.publish("{0}/get".format(cdc_feed), "\0")
 mqtt_client.publish("{0}/get".format(cdph_feed), "\0")
 
 
-# run_num = 0
 while True:
     try:
         # check incoming subscription messages from Adafruit IO
@@ -402,7 +401,7 @@ while True:
                 display_data(bottom_text=feeds['cdph_count'])
             else:
                 display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'], font='vera')
-    except (ValueError, RuntimeError) as e:
+    except:
         print("Failed to get data, retrying!\n")
         # reconnect to WiFi and Adafruit IO
         wifi.reset()
