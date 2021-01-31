@@ -34,7 +34,6 @@ DEBUG_LOOP = False
 FANCY_FONT = True
 feeds = {
     'still_alive' : None,
-    'loop_error' : None,
     'loop_delay' : None,
     'led_color': None,  # same as color[3]
     'us_toggle': None,
@@ -105,7 +104,7 @@ led_color_feed = secrets["aio_username"] + "/feeds/led-color"
 jhu_cdc_feed = secrets["aio_username"] + "/feeds/jhu-cdc"
 lat_cdph_feed = secrets["aio_username"] + "/feeds/lat-cdph"
 loop_delay_feed = secrets["aio_username"] + "/feeds/loop-delay"
-loop_error_feed = secrets["aio_username"] + "/feeds/loop-error"
+logging_feed = secrets["aio_username"] + "/feeds/logging"
 still_alive_feed = secrets["aio_username"] + "/feeds/still-alive"
 
 ### MQTT callback methods ###
@@ -138,7 +137,7 @@ def connected(client, userdata, flags, rc):
     # subscribe to all changes on 2 feeds to check if LED matrix is working
     client.subscribe(still_alive_feed, qos=QOS_level)
     display_data('AIO feed', '9/10')
-    client.subscribe(loop_error_feed, qos=QOS_level)
+    client.subscribe(logging_feed, qos=QOS_level)
     display_data('AIO feed', '10/10')
     time.sleep(1)
 
@@ -320,10 +319,11 @@ mqtt_client = MQTT.MQTT(
     password=secrets["aio_key"],
     client_id="covidticker",
     log=True,
-    keep_alive=60
+    keep_alive=120
 )
 
 # set logging priority level
+mqtt_client.attach_logger(logger_name='logging')
 mqtt_client.set_logger_level("DEBUG")
 
 # Setup the callback methods above
@@ -341,7 +341,7 @@ time.sleep(5)
 mqtt_client.connect()
 time.sleep(1)
 
-# Set up a message handler for all the feeds (except loop-error)
+# Set up a message handler for all the feeds (except logging)
 mqtt_client.add_topic_callback(cdph_feed, on_la_cdph_msg)
 mqtt_client.add_topic_callback(lat_feed, on_la_lat_msg)
 mqtt_client.add_topic_callback(cdc_feed, on_us_cdc_msg)
@@ -380,9 +380,6 @@ while True:
         if DEBUG_LOOP:
             print('-' * 40)
             print(feeds)
-        # publish latest error message to Adafruit IO
-        if feeds['loop_error'] != None:
-            mqtt_client.publish(loop_error_feed, feeds['loop_error'])
         # display the top number (US deaths)
         if feeds['us_toggle'] == 'JHU':
             if not FANCY_FONT:
@@ -406,8 +403,7 @@ while True:
             else:
                 display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'], font='vera')
     except (ValueError, RuntimeError) as e:
-        feeds['loop_error'] = "Failed to get data, retrying!\n" + e
-        print(feeds['loop_error'])
+        print("Failed to get data, retrying!\n")
         # reconnect to WiFi and Adafruit IO
         wifi.reset()
         mqtt_client.reconnect()
