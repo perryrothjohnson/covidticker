@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 import numpy as np
 import pandas as pd
-from Adafruit_IO import Client, RequestError, Feed
 import time
 
 # global flags

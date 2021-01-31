@@ -3,8 +3,8 @@ A wall-mounted ticker, which updates daily with the total number of
 COVID-19 deaths for the United States and Los Angeles county.
 
 author:         Perry Roth-Johnson
-last modified:  30 Jan 2021
-version:        2.9
+last modified:  31 Jan 2021
+version:        2.10
 
 ---todo---
 change secrets.py with info from new wifi router we buy for exhibit
@@ -16,8 +16,7 @@ import board
 import busio
 from digitalio import DigitalInOut
 import neopixel
-from adafruit_esp32spi import adafruit_esp32spi
-from adafruit_esp32spi import adafruit_esp32spi_wifimanager
+from adafruit_esp32spi import adafruit_esp32spi, adafruit_esp32spi_wifimanager
 import adafruit_esp32spi.adafruit_esp32spi_socket as socket
 import adafruit_minimqtt.adafruit_minimqtt as MQTT
 import displayio
@@ -25,7 +24,8 @@ import terminalio
 from adafruit_matrixportal.matrix import Matrix
 from adafruit_display_text.label import Label
 from adafruit_bitmap_font import bitmap_font
-import adafruit_logging as logging
+# from aio_handler import AIOHandler
+# import adafruit_logging as logging
 
 ### global variables ###
 
@@ -74,13 +74,13 @@ bottom_label = Label(std_font, max_glyphs=12)
 group.append(top_label)
 group.append(bottom_label)
 
-### WiFi ###
+# ### WiFi ###
 
-# Get wifi details and more from a secrets.py file
+# Get wifi/Adafruit IO details and more from a secrets.py file
 try:
     from secrets import secrets
 except ImportError:
-    print("WiFi secrets are kept in secrets.py, please add them there!")
+    print("WiFi/AIO secrets are kept in secrets.py, please add them there!")
     raise
 
 # If you are using a board with pre-defined ESP32 Pins:
@@ -104,7 +104,7 @@ led_color_feed = secrets["aio_username"] + "/feeds/led-color"
 jhu_cdc_feed = secrets["aio_username"] + "/feeds/jhu-cdc"
 lat_cdph_feed = secrets["aio_username"] + "/feeds/lat-cdph"
 loop_delay_feed = secrets["aio_username"] + "/feeds/loop-delay"
-logging_feed = secrets["aio_username"] + "/feeds/logging"
+# logging_feed = secrets["aio_username"] + "/feeds/logging"
 still_alive_feed = secrets["aio_username"] + "/feeds/still-alive"
 
 ### MQTT callback methods ###
@@ -118,27 +118,27 @@ def connected(client, userdata, flags, rc):
     QOS_level = 0
     # subscribe to all changes on 4 feeds for sources of death data
     client.subscribe(cdph_feed, qos=QOS_level)
-    display_data('AIO feed', '1/10')
+    display_data('AIO feed', '1/9')
     client.subscribe(lat_feed, qos=QOS_level)
-    display_data('AIO feed', '2/10')
+    display_data('AIO feed', '2/9')
     client.subscribe(cdc_feed, qos=QOS_level)
-    display_data('AIO feed', '3/10')
+    display_data('AIO feed', '3/9')
     client.subscribe(jhu_feed, qos=QOS_level)
-    display_data('AIO feed', '4/10')
+    display_data('AIO feed', '4/9')
     # subscribe to all changes on 4 feeds for dashboard controls
     client.subscribe(led_color_feed, qos=QOS_level)
-    display_data('AIO feed', '5/10')
+    display_data('AIO feed', '5/9')
     client.subscribe(jhu_cdc_feed, qos=QOS_level)
-    display_data('AIO feed', '6/10')
+    display_data('AIO feed', '6/9')
     client.subscribe(lat_cdph_feed, qos=QOS_level)
-    display_data('AIO feed', '7/10')
+    display_data('AIO feed', '7/9')
     client.subscribe(loop_delay_feed, qos=QOS_level)
-    display_data('AIO feed', '8/10')
+    display_data('AIO feed', '8/9')
     # subscribe to all changes on 2 feeds to check if LED matrix is working
     client.subscribe(still_alive_feed, qos=QOS_level)
-    display_data('AIO feed', '9/10')
-    client.subscribe(logging_feed, qos=QOS_level)
-    display_data('AIO feed', '10/10')
+    display_data('AIO feed', '9/9')
+    # client.subscribe(logging_feed, qos=QOS_level)
+    # display_data('AIO feed', '10/10')
     time.sleep(1)
 
 def subscribe(client, userdata, topic, granted_qos):
@@ -318,13 +318,13 @@ mqtt_client = MQTT.MQTT(
     username=secrets["aio_username"],
     password=secrets["aio_key"],
     client_id="covidticker",
-    log=True,
+    log=False,
     keep_alive=120
 )
 
 # set logging priority level
-mqtt_client.attach_logger(logger_name='logging')
-mqtt_client.set_logger_level("DEBUG")
+# mqtt_client.attach_logger(logger_name='logging')
+# mqtt_client.set_logger_level("DEBUG")
 
 # Setup the callback methods above
 mqtt_client.on_connect = connected
@@ -359,7 +359,7 @@ feeds['led_color'] = color[3]
 feeds['loop_delay'] = 2
 mqtt_client.publish(loop_delay_feed, feeds['loop_delay'])
 
-# get recent values on all the feeds (except loop-error)
+# get recent values on all the feeds (except logging)
 mqtt_client.publish("{0}/get".format(still_alive_feed), "\0")
 mqtt_client.publish("{0}/get".format(loop_delay_feed), "\0")
 mqtt_client.publish("{0}/get".format(led_color_feed), "\0")
