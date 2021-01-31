@@ -35,7 +35,6 @@ If you don't already have one, you'll also need to setup an Adafruit IO account 
 | LED color        | `led-color`      | choose a text color for the LED matrix display                                      |
 | loop delay       | `loop-delay`     | how many seconds to wait between executions of the main loop?                       |
 | still alive?     | `still-alive`    | if 1: LED display is still alive; if 0 (for a long time): it has crashed            |
-| loop error       | `loop-error`     | error messages encountered during the main loop                                     |
 
 ### Webhooks
 
