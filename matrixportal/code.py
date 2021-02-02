@@ -3,13 +3,22 @@ A wall-mounted ticker, which updates daily with the total number of
 COVID-19 deaths for the United States and Los Angeles county.
 
 author:         Perry Roth-Johnson
-last modified:  31 Jan 2021
-version:        2.10
+last modified:  1 Feb 2021
+version:        2.11
 
 ---todo---
 change secrets.py with info from new wifi router we buy for exhibit
 install heat sink and/or cooling fan onto Matrix Portal board?
 """
+
+### monitor free memory ###
+def stat(lbl, send_to_AIO=False):
+    mf = gc.mem_free() / 1024
+    if send_to_AIO:
+        mqtt_client.publish(logging_feed, mf)
+    print('%s %g' % (lbl, mf))
+import gc
+stat('gc')
 
 import time
 import board
@@ -24,8 +33,8 @@ import terminalio
 from adafruit_matrixportal.matrix import Matrix
 from adafruit_display_text.label import Label
 from adafruit_bitmap_font import bitmap_font
-# from aio_handler import AIOHandler
-# import adafruit_logging as logging
+
+stat('imports')
 
 ### global variables ###
 
@@ -34,6 +43,7 @@ DEBUG_LOOP = False
 FANCY_FONT = True
 feeds = {
     'still_alive' : None,
+    'mem_free' : None,
     'loop_delay' : None,
     'led_color': None,  # same as color[3]
     'us_toggle': None,
@@ -43,6 +53,8 @@ feeds = {
     'cdc_count': None,
     'jhu_count': None
 }
+
+stat('global variables')
 
 ### setup LED matrix display ###
 
@@ -74,6 +86,8 @@ bottom_label = Label(std_font, max_glyphs=12)
 group.append(top_label)
 group.append(bottom_label)
 
+stat('setup LED matrix display')
+
 # ### WiFi ###
 
 # Get wifi/Adafruit IO details and more from a secrets.py file
@@ -93,6 +107,8 @@ esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
 status_light = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=0.2)
 wifi = adafruit_esp32spi_wifimanager.ESPSPI_WiFiManager(esp, secrets, status_light)
 
+stat('wifi')
+
 ### Feeds ###
 
 # Setup all 8 feeds
@@ -104,8 +120,10 @@ led_color_feed = secrets["aio_username"] + "/feeds/led-color"
 jhu_cdc_feed = secrets["aio_username"] + "/feeds/jhu-cdc"
 lat_cdph_feed = secrets["aio_username"] + "/feeds/lat-cdph"
 loop_delay_feed = secrets["aio_username"] + "/feeds/loop-delay"
-# logging_feed = secrets["aio_username"] + "/feeds/logging"
+logging_feed = secrets["aio_username"] + "/feeds/logging"
 still_alive_feed = secrets["aio_username"] + "/feeds/still-alive"
+
+stat('feeds')
 
 ### MQTT callback methods ###
 
@@ -165,6 +183,11 @@ def on_still_alive_msg(client, topic, message):
         mqtt_client.publish(still_alive_feed, 1)
         feeds['still_alive'] = 1
         print("  ...LED display is still alive!")
+
+def on_logging_msg(client, topic, message):
+    # Method called whenever user/feeds/logging has a new value
+    print(topic, message)
+    feeds['logging'] = float(message)
 
 def on_loop_delay_msg(client, topic, message):
     # Method called whenever user/feeds/loop-delay has a new value
@@ -238,6 +261,7 @@ def on_us_jhu_msg(client, topic, message):
     print(topic, message)
     feeds['jhu_count'] = jhu_count
 
+stat('MQTT callback methods')
 
 ### LED matrix functions ###
 
@@ -298,6 +322,8 @@ def display_data(top_text=None, bottom_text=None, top_color=color[1], bottom_col
             print("Label bounding box: {},{},{},{}".format(bbbx, bbby, bbbw, bbbh))
             print("Label x: {} y: {}".format(bottom_label.x, bottom_label.y))
 
+stat('LED matrix functions')
+
 
 # Connect to WiFi
 print("Connecting to WiFi...")
@@ -306,6 +332,10 @@ wifi.connect()
 print("Connected!")
 display_data('wifi', 'good!!!')
 time.sleep(1)
+
+stat('wifi')
+gc.collect()
+stat('wifi (after gc)')
 
 # Initialize MQTT interface with the esp interface
 print("starting MQTT...")
@@ -319,7 +349,7 @@ mqtt_client = MQTT.MQTT(
     password=secrets["aio_key"],
     client_id="covidticker",
     log=False,
-    keep_alive=120
+    keep_alive=60
 )
 
 # set logging priority level
@@ -334,6 +364,8 @@ mqtt_client.on_message = message
 
 time.sleep(1)
 
+stat('mqtt_client')
+
 # Connect the client to the MQTT broker.
 print("Connecting to Adafruit IO...")
 display_data('connecting', 'AdafruitIO')
@@ -341,7 +373,9 @@ time.sleep(5)
 mqtt_client.connect()
 time.sleep(1)
 
-# Set up a message handler for all the feeds (except logging)
+stat('connect AIO', send_to_AIO=True)
+
+# Set up a message handler for all the feeds
 mqtt_client.add_topic_callback(cdph_feed, on_la_cdph_msg)
 mqtt_client.add_topic_callback(lat_feed, on_la_lat_msg)
 mqtt_client.add_topic_callback(cdc_feed, on_us_cdc_msg)
@@ -351,16 +385,20 @@ mqtt_client.add_topic_callback(jhu_cdc_feed, on_jhu_cdc_msg)
 mqtt_client.add_topic_callback(lat_cdph_feed, on_lat_cdph_msg)
 mqtt_client.add_topic_callback(loop_delay_feed, on_loop_delay_msg)
 mqtt_client.add_topic_callback(still_alive_feed, on_still_alive_msg)
+mqtt_client.add_topic_callback(logging_feed, on_logging_msg)
 
 # initialize LED color to custom blue
 feeds['led_color'] = color[3]
 
-# initialize loop_delay to 2 seconds
-feeds['loop_delay'] = 2
+# initialize loop_delay to 7 seconds
+feeds['loop_delay'] = 7
 mqtt_client.publish(loop_delay_feed, feeds['loop_delay'])
 
-# get recent values on all the feeds (except logging)
+stat('initializations', send_to_AIO=True)
+
+# get recent values on all the feeds
 mqtt_client.publish("{0}/get".format(still_alive_feed), "\0")
+mqtt_client.publish("{0}/get".format(logging_feed), "\0")
 mqtt_client.publish("{0}/get".format(loop_delay_feed), "\0")
 mqtt_client.publish("{0}/get".format(led_color_feed), "\0")
 mqtt_client.publish("{0}/get".format(jhu_cdc_feed), "\0")
@@ -370,6 +408,7 @@ mqtt_client.publish("{0}/get".format(lat_feed), "\0")
 mqtt_client.publish("{0}/get".format(cdc_feed), "\0")
 mqtt_client.publish("{0}/get".format(cdph_feed), "\0")
 
+stat('publishes', send_to_AIO=True)
 
 while True:
     try:
@@ -401,10 +440,14 @@ while True:
                 display_data(bottom_text=feeds['cdph_count'])
             else:
                 display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'], font='vera')
+        # collect garbage to free up memory
+        gc.collect()
+        stat('main loop (try)', send_to_AIO=True)
     except:
         print("Failed to get data, retrying!\n")
         # reconnect to WiFi and Adafruit IO
         wifi.reset()
         mqtt_client.reconnect()
+        stat('main loop (except)', send_to_AIO=True)
         continue
     time.sleep(feeds['loop_delay'])
