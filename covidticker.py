@@ -159,12 +159,18 @@ except:
 finally:
     r.close()
 #  make sure we grabbed the data correctly and don't have an empty list
+attempts = 0
 try:
     while len(soup.select('span')) == 0:
-        print("  ...got an empty list, trying again...")
+        print("  ...attempt {0}: got an empty list, trying again...".format(attempts))
         r = requests.get('https://worldhealthorg.shinyapps.io/covid/_w_e3a749be/#tab-8990-1')
         soup = BeautifulSoup(r.text, 'html.parser')
         r.close()
+        attempts += 1
+        if attempts > 10:
+            print("  ...exceeded number of attempts!")
+            world_deaths = None
+            break
     else:
         world_deaths = int(float(soup.select('span')[25].text.strip()[:-7].replace(' ', '').replace(',', '')))
 except:
