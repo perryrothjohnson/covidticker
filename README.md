@@ -16,7 +16,7 @@ A [Python script](https://github.com/perryrothjohnson/covidticker/blob/main/covi
 
 The data is recorded on [Adafruit IO](https://io.adafruit.com/) and is updated hourly using a [scheduled GitHub Action](https://github.com/perryrothjohnson/covidticker/blob/main/.github/workflows/scheduled.yml). Johns Hopkins and LA Times are the primary data sources for US and LA county deaths, respectively. Their figures are typically ahead of the data published by the CDC and CDPH. However, we collect CDC and CDPH data for comparison, and as backups for display on the ticker.
 
-<img src="docs/adafruit-IO_dashboard.png" alt="Adafruit IO dashboard on January 23, 2021" width="540">
+<img src="docs/adafruit-IO_dashboard.png" alt="Adafruit IO dashboard on January 23, 2021" width="800">
 
 Code written in [CircuitPython](https://circuitpython.org/) runs on an [Adafruit Matrix Portal](https://www.adafruit.com/product/4745) circuit board, powered by [USB-C](https://www.adafruit.com/product/4298). The Matrix Portal uses the [MQTT protocol](https://learn.adafruit.com/mqtt-in-circuitpython/overview) to receive data posted on [Adafruit IO](https://io.adafruit.com/). It is connected to an [RGB LED matrix](https://www.adafruit.com/product/2276), which serves as the LED display ticker.
 
@@ -35,6 +35,7 @@ If you don't already have one, you'll also need to setup an Adafruit IO account 
 | LED color        | `led-color`      | choose a text color for the LED matrix display                                      |
 | loop delay       | `loop-delay`     | how many seconds to wait between executions of the main loop?                       |
 | still alive?     | `still-alive`    | if 1: LED display is still alive; if 0 (for a long time): it has crashed            |
+| reset            | `reset`          | reset button to manually reconnect LED display to Adafruit IO server                |
 
 ### Webhooks
 
