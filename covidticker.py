@@ -104,47 +104,116 @@ finally:
     r.close()
 johnshopkins_github = pd.Series([world_deaths, us_deaths], index=['world', 'US'], name='JHU github')
 
-
-# COVID Tracking Project ------------------------------------------------------
-print("pulling from COVID Tracking project...")
-# US deaths
-try:
-    r = requests.get('https://api.covidtracking.com/v1/us/current.json')
-    us_deaths = int(float(r.json()[0]['death']))
-except:
-    us_deaths = None
-finally:
-    r.close()
-# world deaths
-try:
-    r = requests.get('https://api.covidtracking.com/v1/states/ca/current.json')
-    ca_deaths = int(float(r.json()['death']))
-except:
-    ca_deaths = None
-finally:
-    r.close()
-covidtrackingproject = pd.Series([us_deaths, ca_deaths], index=['US', 'CA'], name='COVID Track Proj')
+# # COVID Tracking Project ------------------------------------------------------
+# print("pulling from COVID Tracking project...")
+# # US deaths
+# try:
+#     r = requests.get('https://api.covidtracking.com/v1/us/current.json')
+#     us_deaths = int(float(r.json()[0]['death']))
+# except:
+#     us_deaths = None
+# finally:
+#     r.close()
+# # world deaths
+# try:
+#     r = requests.get('https://api.covidtracking.com/v1/states/ca/current.json')
+#     ca_deaths = int(float(r.json()['death']))
+# except:
+#     ca_deaths = None
+# finally:
+#     r.close()
+# covidtrackingproject = pd.Series([us_deaths, ca_deaths], index=['US', 'CA'], name='COVID Track Proj')
 
 # CDC -------------------------------------------------------------------------
 print("pulling from the CDC...")
+cdc_states = [
+    'AK',
+    'AL',
+    'AR',
+    'AS',
+    'AZ',
+    'CA',
+    'CO',
+    'CT',
+    'DC',
+    'DE',
+    'FL',
+    'FSM',
+    'GA',
+    'GU',
+    'HI',
+    'IA',
+    'ID',
+    'IL',
+    'IN',
+    'KS',
+    'KY',
+    'LA',
+    'MA',
+    'MD',
+    'ME',
+    'MI',
+    'MN',
+    'MO',
+    'MP',
+    'MS',
+    'MT',
+    'NC',
+    'ND',
+    'NE',
+    'NH',
+    'NJ',
+    'NM',
+    'NV',
+    'NY',
+    'NYC',
+    'OH',
+    'OK',
+    'OR',
+    'PA',
+    'PR',
+    'PW',
+    'RI',
+    'RMI',
+    'SC',
+    'SD',
+    'TN',
+    'TX',
+    'UT',
+    'VA',
+    'VI',
+    'VT',
+    'WA',
+    'WI',
+    'WV',
+    'WY'
+]
+def cdc_state_data_url(state):
+    CDC_URL = 'https://data.cdc.gov/resource/9mfq-cb36.json?state=' + state + '&$select=max(tot_death)'
+    return CDC_URL
 # US deaths
-try:
-    r = requests.get('https://data.cdc.gov/resource/9mfq-cb36.json?$select=max(submission_date)')
-    latest_date = r.json()[0]['max_submission_date'][:10]
-    us_url = 'https://data.cdc.gov/resource/9mfq-cb36.json?submission_date=' + latest_date + '&$select=sum(tot_death)'
-    r_us = requests.get(us_url)
-    us_deaths = int(float(r_us.json()[0]['sum_tot_death']))
-except:
-    us_deaths = None
-finally:
-    r.close()
-    r_us.close()
+us_deaths = 0
+for s in cdc_states:
+    url = cdc_state_data_url(s)
+    try:
+        r_state = requests.get(url)
+        state_deaths = int(float(r_state.json()[0]['max_tot_death']))
+        print('  {0:>3} {1:6d}'.format(s, state_deaths))
+        us_deaths += state_deaths
+    except:
+        pass
+        print(s, 'hit exception counting CDC US deaths!')
+    finally:
+        r_state.close()
+        time.sleep(1)
 # CA deaths
 try:
     r_ca = requests.get('https://data.cdc.gov/resource/9mfq-cb36.json?state=CA&$select=max(tot_death)')
     ca_deaths = int(float(r_ca.json()[0]['max_tot_death']))
+    print('\n  {0:>3} {1:6d}'.format('CA', ca_deaths))
 except:
     ca_deaths = None
+    print('CA', 'hit exception counting CDC CA deaths!')
 finally:
     r_ca.close()
 cdc = pd.Series([us_deaths, ca_deaths], index=['US', 'CA'], name='CDC')
@@ -246,8 +315,7 @@ df = pd.concat([
     latimes_api,
     cdc,
     california,
-    who,
-    covidtrackingproject
+    who
     ], axis=1).T
 df = df.rename(columns={
     "world": "world", 
