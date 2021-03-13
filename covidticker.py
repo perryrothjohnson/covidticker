@@ -354,9 +354,26 @@ def send_data(us_cdc, us_jhu, la_cdph, la_lat):
     requests.post('https://io.adafruit.com/api/v2/webhooks/feed/TsvdTi5E1exBefn5SsEUC6fAEayD', json={'value': la_lat})
     print("  data sent!")
 
+try:
+    a = int(df['United States'].loc['CDC'])
+except ValueError:
+    a = None
+try:
+    b = int(df['United States'].loc['JHU github'])
+except ValueError:
+    b = None
+try:
+    c = int(df['LA county'].loc['CDPH'])
+except ValueError:
+    c = None
+try:
+    d = int(df['LA county'].loc['LAT github'])
+except ValueError:
+    d = None
+
 send_data(
-    us_cdc=int(df['United States'].loc['CDC']),
-    us_jhu=int(df['United States'].loc['JHU github']),
-    la_cdph=int(df['LA county'].loc['CDPH']),
-    la_lat=int(df['LA county'].loc['LAT github'])
+    us_cdc=a,
+    us_jhu=b,
+    la_cdph=c,
+    la_lat=d
     )
