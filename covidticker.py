@@ -297,9 +297,9 @@ finally:
     r.close()
 # LA deaths
 try:
-    la_url = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=926fd08f-cc91-4828-af38-bd45de97f8c3&sort=date+desc&q=Los+Angeles&limit=1'
-    r = requests.get(la_url)
-    la_deaths = int(float(r.json()['result']['records'][0]['totalcountdeaths']))
+    URL = 'https://data.chhs.ca.gov/dataset/f333528b-4d38-4814-bebb-12db1f10f535/resource/046cdd2b-31e5-4d34-9ed3-b48cdbc4be7a/download/covid19cases_test.csv'
+    df = pd.read_csv(URL)
+    la_deaths = df.loc[df['area'] == 'Los Angeles']['reported_deaths'].sum()
 except:
     la_deaths = None
 finally:
