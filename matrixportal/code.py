@@ -3,12 +3,9 @@ A wall-mounted ticker, which updates daily with the total number of
 COVID-19 deaths for the United States and Los Angeles county.
 
 author:         Perry Roth-Johnson
-last modified:  14 Feb 2021
-version:        2.12
+last modified:  25 Mar 2021
+version:        2.13
 
----todo---
-change secrets.py with info from new wifi router we buy for exhibit
-install heat sink and/or cooling fan onto Matrix Portal board?
 """
 
 import gc
