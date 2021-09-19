@@ -270,15 +270,19 @@ latimes_api = pd.Series([la_deaths, ca_deaths], index=['LA county', 'CA'], name=
 print("pulling from the LA Times github...")
 # LA deaths
 try:
-    URL = 'https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/latimes-county-totals.csv'
+    # URL = 'https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/latimes-county-totals.csv'
+    # note: latimes-county-totals.csv stopped updating in September 2021 when The Times switched its tracker to use case and death counts consolidated by the state's Department of Public Health
+    URL = 'https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/cdph-county-cases-deaths.csv'
     df = pd.read_csv(URL)
     latest_date = df['date'][0] # date is formatted YYYY-MM-DD
-    la_deaths = int(df[(df['county'] == 'Los Angeles') & (df['date'] == latest_date)]['deaths'])
+    # la_deaths = int(df[(df['county'] == 'Los Angeles') & (df['date'] == latest_date)]['deaths'])
+    la_deaths = int(df[(df['county'] == 'Los Angeles') & (df['date'] == latest_date)]['reported_deaths'])
 except:
     la_deaths = None
 # CA deaths
 try:
-    ca_deaths = sum(df[df['date'] == latest_date]['deaths'])
+    # ca_deaths = sum(df[df['date'] == latest_date]['deaths'])
+    ca_deaths = sum(df[df['date'] == latest_date]['reported_deaths'])
 except:
     ca_deaths = None
 latimes_github = pd.Series([la_deaths, ca_deaths], index=['LA county', 'CA'], name='LAT github')
