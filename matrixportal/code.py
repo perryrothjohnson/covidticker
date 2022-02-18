@@ -1,10 +1,10 @@
 """
-A wall-mounted ticker, which updates daily with the total number of 
+A wall-mounted ticker, which updates daily with the total number of
 COVID-19 deaths for the United States and Los Angeles county.
 
 author:         Perry Roth-Johnson
-last modified:  25 Mar 2021
-version:        2.13
+last modified:  18 Feb 2022
+version:        3.2
 
 """
 
@@ -29,7 +29,7 @@ DEBUG = False
 DEBUG_LOOP = False
 MQTT_LOG = False
 DEFAULT_DELAY = 20
-FANCY_FONT = True
+FANCY_FONT = False  # when US deaths > 1M, set FANCY_FONT = False and million_deaths = True (line 253)
 feeds = {
     'still_alive' : None,
     'reset' : None,
@@ -188,7 +188,7 @@ def on_led_color_msg(client, topic, message):
     # return hex value
     new_color_hex = int(new_color_str)
     color[3] = new_color_hex
-    # pull jhu-cdc and lat-cdph feeds to update toggles 
+    # pull jhu-cdc and lat-cdph feeds to update toggles
     # (and force colors to update on display)
     mqtt_client.publish("{0}/get".format(jhu_cdc_feed), "\0")
     mqtt_client.publish("{0}/get".format(lat_cdph_feed), "\0")
@@ -250,7 +250,7 @@ def on_us_jhu_msg(client, topic, message):
 
 ### LED matrix functions ###
 
-def display_data(top_text=None, bottom_text=None, top_color=color[1], bottom_color=color[2], font='std', million_deaths=False):
+def display_data(top_text=None, bottom_text=None, top_color=color[1], bottom_color=color[2], font='std', million_deaths=True):
     """display death counts on LED matrix display"""
     if font == 'vera':
         if million_deaths:
@@ -279,7 +279,9 @@ def display_data(top_text=None, bottom_text=None, top_color=color[1], bottom_col
             top_label.x = round(display.width / 2 - tbbw / 2)
             top_label.y = 7
         else:
-            top_label.x = 3
+            # center the label
+            top_label.x = round(display.width / 2 - tbbw / 2)
+            # top_label.x = 3
             top_label.y = 7
         if DEBUG:
             print("Label bounding box: {},{},{},{}".format(tbbx, tbby, tbbw, tbbh))
@@ -301,6 +303,7 @@ def display_data(top_text=None, bottom_text=None, top_color=color[1], bottom_col
             bottom_label.x = round(display.width / 2 - bbbw / 2)
             bottom_label.y = (7 + 17)
         else:
+            # match x-coordinates of bottom text with top text
             bottom_label.x = top_label.x
             bottom_label.y = (7 + 16)
         if DEBUG:
@@ -393,23 +396,23 @@ while True:
         # display the top number (US deaths)
         if feeds['us_toggle'] == 'JHU':
             if not FANCY_FONT:
-                display_data(top_text=feeds['jhu_count'])
+                display_data(top_text=feeds['jhu_count'], top_color=feeds['led_color'])
             else:
                 display_data(top_text=feeds['jhu_count'], top_color=feeds['led_color'], font='vera')
         elif feeds['us_toggle'] == 'CDC':
             if not FANCY_FONT:
-                display_data(top_text=feeds['cdc_count'])
+                display_data(top_text=feeds['cdc_count'], top_color=feeds['led_color'])
             else:
                 display_data(top_text=feeds['cdc_count'], top_color=feeds['led_color'], font='vera')
         # display the bottom number (LA county deaths)
         if feeds['la_toggle'] == 'LAT':
             if not FANCY_FONT:
-                display_data(bottom_text=feeds['lat_count'])
+                display_data(bottom_text=feeds['lat_count'], bottom_color=feeds['led_color'])
             else:
                 display_data(bottom_text=feeds['lat_count'], bottom_color=feeds['led_color'], font='vera')
         elif feeds['la_toggle'] == 'CDPH':
             if not FANCY_FONT:
-                display_data(bottom_text=feeds['cdph_count'])
+                display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'])
             else:
                 display_data(bottom_text=feeds['cdph_count'], bottom_color=feeds['led_color'], font='vera')
         # collect garbage to free up memory
