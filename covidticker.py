@@ -197,7 +197,7 @@ for s in cdc_states:
     url = cdc_state_data_url(s)
     try:
         r_state = requests.get(url)
-        state_deaths = int(float(r_state.json()[0]['max_tot_death']))
+        state_deaths = int(float(r_state.json()[0]['max_tot_deaths']))
         print('  {0:>3} {1:6d}'.format(s, state_deaths))
         us_deaths += state_deaths
     except:
@@ -208,8 +208,8 @@ for s in cdc_states:
         time.sleep(1)
 # CA deaths
 try:
-    r_ca = requests.get('https://data.cdc.gov/resource/pwn4-m3yp.json?state=CA&$select=max(tot_death)')
-    ca_deaths = int(float(r_ca.json()[0]['max_tot_death']))
+    r_ca = requests.get('https://data.cdc.gov/resource/pwn4-m3yp.json?state=CA&$select=max(tot_deaths)')
+    ca_deaths = int(float(r_ca.json()[0]['max_tot_deaths']))
     print('\n  {0:>3} {1:6d}'.format('CA', ca_deaths))
 except:
     ca_deaths = None
@@ -246,27 +246,27 @@ except:
     world_deaths = None
 who = pd.Series([world_deaths], index=['world'], name='WHO')
 
-# LA Times api ----------------------------------------------------------------
-print("pulling from the LA Times api...")
-# LA deaths
-try:
-    r = requests.get('https://covid-19.datasettes.com/covid/latimes_county_totals.json?county=Los+Angeles')
-    la_deaths = int(float(r.json()['rows'][0][5]))
-except:
-    la_deaths = None
-finally:
-    r.close()
-# CA deaths
-try:
-    r = requests.get('https://covid-19.datasettes.com/covid/latimes_state_totals.json')
-    ca_deaths = int(float(r.json()['rows'][0][3]))
-except:
-    ca_deaths = None
-finally:
-    r.close()
-latimes_api = pd.Series([la_deaths, ca_deaths], index=['LA county', 'CA'], name='LAT api')
+# # LA Times api ----------------------------------------------------------------
+# print("pulling from the LA Times api...")
+# # LA deaths
+# try:
+#     r = requests.get('https://covid-19.datasettes.com/covid/latimes_county_totals.json?county=Los+Angeles')
+#     la_deaths = int(float(r.json()['rows'][0][5]))
+# except:
+#     la_deaths = None
+# finally:
+#     r.close()
+# # CA deaths
+# try:
+#     r = requests.get('https://covid-19.datasettes.com/covid/latimes_state_totals.json')
+#     ca_deaths = int(float(r.json()['rows'][0][3]))
+# except:
+#     ca_deaths = None
+# finally:
+#     r.close()
+# latimes_api = pd.Series([la_deaths, ca_deaths], index=['LA county', 'CA'], name='LAT api')
 
-# LA Times github; pandas
+# LA Times github; pandas -----------------------------------------------------
 print("pulling from the LA Times github...")
 # LA deaths
 try:
@@ -316,7 +316,7 @@ df = pd.concat([
     johnshopkins_github,
     johnshopkins_api,
     latimes_github,
-    latimes_api,
+    # latimes_api,
     cdc,
     california,
     who
@@ -334,8 +334,8 @@ if print_table:
     print(df)
     print("")
 
-print('{:7,.0f}'.format(df['United States'].loc['JHU github']), "dead in United States (JHU)")
-print('{:7,.0f}'.format(df['LA county'].loc['LAT github']),     "dead in LA county     (LAT)")
+print('{:9,.0f}'.format(df['United States'].loc['JHU github']), "dead in United States (JHU)")
+print('{:9,.0f}'.format(df['LA county'].loc['CDPH']),           "dead in LA county     (CDPH)")
 print("")
 
 # send data to Adafruit IO ----------------------------------------------------
