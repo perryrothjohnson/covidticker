@@ -189,7 +189,7 @@ cdc_states = [
     'WY'
 ]
 def cdc_state_data_url(state):
-    CDC_URL = 'https://data.cdc.gov/resource/9mfq-cb36.json?state=' + state + '&$select=max(tot_death)'
+    CDC_URL = 'https://data.cdc.gov/resource/pwn4-m3yp.json?state=' + state + '&$select=max(tot_deaths)'
     return CDC_URL
 # US deaths
 us_deaths = 0
@@ -208,7 +208,7 @@ for s in cdc_states:
         time.sleep(1)
 # CA deaths
 try:
-    r_ca = requests.get('https://data.cdc.gov/resource/9mfq-cb36.json?state=CA&$select=max(tot_death)')
+    r_ca = requests.get('https://data.cdc.gov/resource/pwn4-m3yp.json?state=CA&$select=max(tot_death)')
     ca_deaths = int(float(r_ca.json()[0]['max_tot_death']))
     print('\n  {0:>3} {1:6d}'.format('CA', ca_deaths))
 except:
