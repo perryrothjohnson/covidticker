@@ -68,3 +68,7 @@ This project was heavily inspired by these projects:
 - [julianbruegger/corona-display](https://github.com/julianbruegger/corona-display), an LCD ticker run by a Raspberry Pi  
 - Adafruit: [Network Connected RGB Matrix Clock](https://learn.adafruit.com/network-connected-metro-rgb-matrix-clock/overview)  
 - Adafruit: [Tombstone Matrix Portal](https://learn.adafruit.com/tombstone-matrix-portal/overview)  
+
+## Installation at California Science Center
+
+[_All in This Together_ exhibit](https://californiasciencecenter.org/exhibits/covid-19) on display at the California Science Center in Los Angeles.
